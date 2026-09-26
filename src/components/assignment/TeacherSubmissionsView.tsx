@@ -1,4 +1,8 @@
-import { Users, FileText, CheckCircle2, Edit3, Star } from 'lucide-react';
+import React from 'react';
+import {
+  Users, FileText, CheckCircle2, Edit3, Star,
+  Clock, Zap, ShieldCheck, AlertTriangle
+} from 'lucide-react';
 import type { Essay, Review, User, Assignment } from '../../types';
 
 interface TeacherSubmissionsViewProps {
@@ -19,7 +23,7 @@ export const TeacherSubmissionsView: React.FC<TeacherSubmissionsViewProps> = ({
   const getAuthor = (authorId: string): User | undefined => users.find((u) => u.id === authorId);
 
   return (
-    <div className="glass-card p-6 space-y-5">
+    <div className="glass-card p-4 sm:p-6 space-y-5">
       <div className="flex items-center justify-between pb-3 border-b border-slate-700/40">
         <div>
           <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
@@ -27,7 +31,7 @@ export const TeacherSubmissionsView: React.FC<TeacherSubmissionsViewProps> = ({
             Сданные работы учеников ({submissions.length})
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Просматривайте эссе, взаимные рецензии одноклассников и выставляйте экспертные баллы
+            Просматривайте эссе, отчёты о честности набора текста и выставляйте экспертные баллы
           </p>
         </div>
       </div>
@@ -56,23 +60,54 @@ export const TeacherSubmissionsView: React.FC<TeacherSubmissionsViewProps> = ({
                 key={essay.id}
                 className="p-4 rounded-xl bg-slate-900/40 border border-slate-700/50 hover:border-slate-600 transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
-                {/* Author Info */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs bg-violet-600/30 text-violet-200 border border-violet-500/30 flex-shrink-0">
-                    {author?.avatar || 'ST'}
-                  </div>
-                  <div>
-                    <div className="text-sm font-bold text-slate-100">{author?.name || 'Студент'}</div>
-                    <div className="text-xs text-slate-400 flex items-center gap-2 flex-wrap mt-0.5">
-                      <span>{essay.wordCount} слов</span>
-                      <span>·</span>
-                      <span>{essay.submittedAt ? new Date(essay.submittedAt).toLocaleDateString() : '—'}</span>
-                      {essay.isExamMode && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-violet-900/40 text-violet-300 border border-violet-700/30">
-                          ⏱️ Симуляция экзамена
-                        </span>
-                      )}
+                {/* Author & Honesty Info */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs bg-violet-600/30 text-violet-200 border border-violet-500/30 flex-shrink-0">
+                      {author?.avatar || 'ST'}
                     </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-100">{author?.name || 'Студент'}</div>
+                      <div className="text-xs text-slate-400 flex items-center gap-2 flex-wrap mt-0.5">
+                        <span>{essay.wordCount} слов</span>
+                        <span>·</span>
+                        <span>{essay.submittedAt ? new Date(essay.submittedAt).toLocaleDateString() : '—'}</span>
+                        {essay.isExamMode && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-violet-900/40 text-violet-300 border border-violet-700/30">
+                            ⏱️ Симуляция экзамена
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Honesty Report for Teacher */}
+                  <div className="flex items-center gap-2 flex-wrap pt-1">
+                    {essay.timeSpentSeconds !== undefined && essay.timeSpentSeconds > 0 && (
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700/60 font-mono flex items-center gap-1">
+                        <Clock size={11} className="text-violet-400" />
+                        {Math.floor(essay.timeSpentSeconds / 60)}м {essay.timeSpentSeconds % 60}с
+                      </span>
+                    )}
+
+                    {essay.averageWpm !== undefined && essay.averageWpm > 0 && (
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700/60 font-mono flex items-center gap-1">
+                        <Zap size={11} className="text-amber-400" />
+                        {essay.averageWpm} сл/мин
+                      </span>
+                    )}
+
+                    {(essay.pasteAttempts || 0) > 0 ? (
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/25 font-semibold flex items-center gap-1">
+                        <AlertTriangle size={11} />
+                        Попыток вставки: {essay.pasteAttempts}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 font-semibold flex items-center gap-1">
+                        <ShieldCheck size={11} />
+                        Честный ввод
+                      </span>
+                    )}
                   </div>
                 </div>
 

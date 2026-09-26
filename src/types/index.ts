@@ -116,6 +116,9 @@ export interface Essay {
   submittedAt?: string;
   isExamMode?: boolean;
   timeSpentSeconds?: number;
+  keystrokesCount?: number;
+  pasteAttempts?: number;
+  averageWpm?: number;
 }
 
 export type CriterionKey = 'taskResponse' | 'coherence' | 'lexicalResource' | 'grammar';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronRight, Sun, Moon, LogOut } from 'lucide-react';
+import { ChevronRight, Sun, Moon, LogOut, Menu } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 import NotificationPanel from './NotificationPanel';
 
@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
-  const { currentUser, theme, toggleTheme, logout } = useStore();
+  const { currentUser, theme, toggleTheme, logout, sidebarOpen, setSidebarOpen } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -27,31 +27,41 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
 
   return (
     <header
-      className="h-14 flex items-center px-6 gap-4 flex-shrink-0"
+      className="h-14 flex items-center px-3 sm:px-6 gap-2 sm:gap-4 flex-shrink-0"
       style={{
         background: 'var(--bg-card)',
         borderBottom: '1px solid var(--border)',
         boxShadow: 'var(--shadow-sm)',
       }}
     >
+      {/* Mobile Hamburger Menu Toggle */}
+      <button
+        type="button"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="md:hidden p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors flex items-center justify-center"
+        aria-label="Toggle navigation menu"
+      >
+        <Menu size={20} />
+      </button>
+
       {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
+      <nav className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm flex-1 min-w-0">
         {crumbs.map((crumb, i) => (
           <React.Fragment key={crumb.path}>
-            {i > 0 && <ChevronRight size={13} style={{ color: 'var(--text-muted)' }} />}
+            {i > 0 && <ChevronRight size={12} className="text-slate-500 flex-shrink-0" />}
             <span
               style={{
                 color: i === crumbs.length - 1 ? 'var(--text-primary)' : 'var(--text-muted)',
                 fontWeight: i === crumbs.length - 1 ? 600 : 400,
               }}
-              className="truncate"
+              className={`truncate ${i < crumbs.length - 1 ? 'hidden sm:inline' : 'inline'}`}
             >
               {title && i === crumbs.length - 1 ? title : crumb.label}
             </span>
           </React.Fragment>
         ))}
         {subtitle && (
-          <span className="text-xs ml-1 truncate" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-[11px] sm:text-xs ml-1 truncate hidden md:inline text-slate-400">
             — {subtitle}
           </span>
         )}

@@ -115,7 +115,12 @@ const AssignmentPage: React.FC = () => {
     });
   };
 
-  const handleSubmitEssay = () => {
+  const handleSubmitEssay = (metrics?: {
+    timeSpentSeconds: number;
+    keystrokesCount: number;
+    pasteAttempts: number;
+    averageWpm: number;
+  }) => {
     if (!currentUser || !essayText.trim()) return;
     const words = essayText.trim().split(/\s+/).filter(Boolean).length;
     if (words < assignment.minWords) {
@@ -132,6 +137,10 @@ const AssignmentPage: React.FC = () => {
       content: essayText.trim(),
       wordCount: words,
       status: 'submitted',
+      timeSpentSeconds: metrics?.timeSpentSeconds,
+      keystrokesCount: metrics?.keystrokesCount,
+      pasteAttempts: metrics?.pasteAttempts,
+      averageWpm: metrics?.averageWpm,
     });
   };
 
@@ -146,13 +155,14 @@ const AssignmentPage: React.FC = () => {
       status: 'submitted',
       isExamMode: true,
       timeSpentSeconds,
+      averageWpm: timeSpentSeconds > 0 ? Math.round(words / (timeSpentSeconds / 60)) : undefined,
     });
     setIsExamModeOpen(false);
   };
 
   return (
     <AppShell title={assignment.title}>
-      <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6 animate-fade-in">
+      <div className="p-3 sm:p-6 max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-fade-in">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between">
           <button
