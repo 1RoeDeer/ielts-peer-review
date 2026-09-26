@@ -29,7 +29,7 @@ function nameToFakeEmail(name: string): string {
     .replace(/я/g,'ya')
     .replace(/[^a-z0-9.]/g, '')
     || `user${Date.now()}`;
-  return `${slug}@ieltsclass.local`;
+  return `${slug}@ieltsclass.com`;
 }
 
 /** Извлекаем "имя пользователя" из email для формы входа */
