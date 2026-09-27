@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { ErrorCategory, InlineComment } from '../../types';
-import { Check, Lightbulb, AlertCircle } from 'lucide-react';
+import { Check, Lightbulb, X, PenLine } from 'lucide-react';
 import CharCounter from '../ui/CharCounter';
 
 const COMMENT_MAX = 3000;
@@ -17,70 +17,120 @@ interface FloatingTooltipProps {
 
 interface CategoryDef {
   value: ErrorCategory;
+  emoji: string;
   label: string;
+  shortLabel: string;
   dot: string;
   bg: string;
+  bgHover: string;
   text: string;
   border: string;
+  defaultComment: string;
 }
 
 const CATEGORIES: CategoryDef[] = [
   {
     value: 'grammar',
-    label: 'Grammar',
+    emoji: '🔴',
+    label: 'Грамматика',
+    shortLabel: 'Грамматика',
     dot: '#dc2626',
-    bg: 'rgba(220,38,38,0.08)',
-    text: '#b91c1c',
-    border: 'rgba(220,38,38,0.25)',
+    bg: 'rgba(220,38,38,0.10)',
+    bgHover: 'rgba(220,38,38,0.20)',
+    text: '#f87171',
+    border: 'rgba(220,38,38,0.35)',
+    defaultComment: 'Здесь есть грамматическая ошибка. Обрати внимание!',
   },
   {
     value: 'vocabulary',
-    label: 'Vocabulary',
-    dot: '#2563eb',
-    bg: 'rgba(37,99,235,0.08)',
-    text: '#1d4ed8',
-    border: 'rgba(37,99,235,0.25)',
-  },
-  {
-    value: 'punctuation',
-    label: 'Punctuation',
-    dot: '#b45309',
-    bg: 'rgba(161,98,7,0.08)',
-    text: '#92400e',
-    border: 'rgba(161,98,7,0.25)',
+    emoji: '🟡',
+    label: 'Словарный запас',
+    shortLabel: 'Лексика',
+    dot: '#d97706',
+    bg: 'rgba(217,119,6,0.10)',
+    bgHover: 'rgba(217,119,6,0.20)',
+    text: '#fbbf24',
+    border: 'rgba(217,119,6,0.35)',
+    defaultComment: 'Попробуй использовать более разнообразную лексику здесь.',
   },
   {
     value: 'style',
-    label: 'Style & Cohesion',
+    emoji: '🔵',
+    label: 'Стиль / Связность',
+    shortLabel: 'Стиль',
     dot: '#7c3aed',
-    bg: 'rgba(109,40,217,0.08)',
-    text: '#6d28d9',
-    border: 'rgba(109,40,217,0.25)',
+    bg: 'rgba(109,40,217,0.10)',
+    bgHover: 'rgba(109,40,217,0.20)',
+    text: '#c084fc',
+    border: 'rgba(109,40,217,0.35)',
+    defaultComment: 'Поработай над связностью и стилем в этом предложении.',
+  },
+  {
+    value: 'praise',
+    emoji: '🟢',
+    label: 'Отличная мысль!',
+    shortLabel: 'Хорошо!',
+    dot: '#16a34a',
+    bg: 'rgba(22,163,74,0.10)',
+    bgHover: 'rgba(22,163,74,0.20)',
+    text: '#4ade80',
+    border: 'rgba(22,163,74,0.35)',
+    defaultComment: 'Отличная мысль! 🌟 Хорошо сформулировано.',
   },
 ];
 
 const FloatingTooltip: React.FC<FloatingTooltipProps> = ({
   position, selectedText, startIndex, endIndex, onAdd, onClose,
 }) => {
+  const [mode, setMode] = useState<'quick' | 'full'>('quick');
   const [category, setCategory] = useState<ErrorCategory | null>(null);
   const [comment, setComment] = useState('');
   const [suggestion, setSuggestion] = useState('');
-  const [step, setStep] = useState<'category' | 'detail'>('category');
 
   const selectedCat = CATEGORIES.find((c) => c.value === category);
 
-  const handleAdd = () => {
-    if (!category || !comment.trim() || comment.length > COMMENT_MAX) return;
-    onAdd({ startIndex, endIndex, highlightedText: selectedText, category, comment: comment.trim(), suggestion: suggestion.trim() || undefined });
+  /** Quick one-tap sticker — uses default comment text */
+  const handleQuickAdd = (cat: CategoryDef) => {
+    onAdd({
+      startIndex,
+      endIndex,
+      highlightedText: selectedText,
+      category: cat.value,
+      comment: cat.defaultComment,
+      suggestion: undefined,
+    });
     onClose();
   };
 
+  /** Full form add */
+  const handleFullAdd = () => {
+    if (!category || !comment.trim() || comment.length > COMMENT_MAX) return;
+    onAdd({
+      startIndex,
+      endIndex,
+      highlightedText: selectedText,
+      category,
+      comment: comment.trim(),
+      suggestion: suggestion.trim() || undefined,
+    });
+    onClose();
+  };
+
+  const openFull = (cat?: CategoryDef) => {
+    if (cat) {
+      setCategory(cat.value);
+      setComment('');
+    }
+    setMode('full');
+  };
+
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const isNearTop = !isMobile && position.y < 280;
 
   const tooltipStyle: React.CSSProperties = isMobile
     ? {
         position: 'fixed',
-        bottom: '20px',
+        bottom: '72px',   // above bottom bar
         left: '12px',
         right: '12px',
         zIndex: 100,
@@ -89,19 +139,16 @@ const FloatingTooltip: React.FC<FloatingTooltipProps> = ({
       }
     : {
         position: 'fixed',
-        left: Math.max(170, Math.min(window.innerWidth - 170, position.x)),
-        top: Math.max(10, position.y - 8),
-        transform: 'translateX(-50%) translateY(-100%)',
-        zIndex: 50,
+        left: Math.max(180, Math.min(window.innerWidth - 180, position.x)),
+        top: isNearTop ? Math.max(16, position.y + 16) : Math.max(16, position.y - 12),
+        transform: isNearTop ? 'translateX(-50%)' : 'translateX(-50%) translateY(-100%)',
+        zIndex: 100,
       };
 
   return (
-    <div
-      className="animate-scale-in"
-      style={tooltipStyle}
-    >
+    <div className="animate-scale-in" style={tooltipStyle}>
       <div
-        className="w-full sm:w-80 rounded-xl overflow-hidden shadow-2xl"
+        className="w-full sm:w-72 rounded-2xl overflow-hidden shadow-2xl"
         style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--border-strong)',
@@ -109,75 +156,83 @@ const FloatingTooltip: React.FC<FloatingTooltipProps> = ({
         }}
       >
         {/* Selected text preview */}
-        <div
-          className="px-4 pt-4 pb-3"
-          style={{ borderBottom: '1px solid var(--border)' }}
-        >
-          <div className="flex items-start gap-2">
-            <AlertCircle size={13} style={{ color: 'var(--text-muted)', marginTop: 1, flexShrink: 0 }} />
-            <p className="text-xs italic line-clamp-2" style={{ color: 'var(--text-secondary)' }}>
-              &ldquo;{selectedText}&rdquo;
-            </p>
-          </div>
+        <div className="px-4 pt-3 pb-2" style={{ borderBottom: '1px solid var(--border)' }}>
+          <p className="text-xs italic line-clamp-2 text-slate-400">
+            &ldquo;{selectedText.length > 60 ? selectedText.slice(0, 60) + '…' : selectedText}&rdquo;
+          </p>
         </div>
 
-        {step === 'category' ? (
-          <div className="p-4">
-            <p className="section-label mb-3">Select error category</p>
+        {mode === 'quick' ? (
+          <div className="p-3 space-y-2">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-1">
+              Выбери тип комментария
+            </p>
+
+            {/* Quick sticker buttons */}
             <div className="grid grid-cols-2 gap-2">
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.value}
-                  onClick={() => { setCategory(cat.value); setStep('detail'); }}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all"
+                  onClick={() => handleQuickAdd(cat)}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
                   style={{
                     background: cat.bg,
                     border: `1px solid ${cat.border}`,
                     color: cat.text,
                   }}
                 >
-                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cat.dot }} />
-                  {cat.label}
+                  <span className="text-base leading-none">{cat.emoji}</span>
+                  <span className="text-left leading-tight">{cat.shortLabel}</span>
                 </button>
               ))}
             </div>
-            <button onClick={onClose} className="btn-ghost w-full mt-3 justify-center text-xs">
-              Cancel
+
+            {/* Full comment option */}
+            <button
+              onClick={() => openFull()}
+              className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all border border-dashed border-slate-700/60"
+            >
+              <PenLine size={12} />
+              Написать подробный комментарий
+            </button>
+
+            <button onClick={onClose} className="w-full text-center text-[11px] text-slate-600 hover:text-slate-400 py-1 transition-colors">
+              Отмена
             </button>
           </div>
         ) : (
           <div className="p-4 space-y-3">
-            {/* Category indicator */}
-            <div className="flex items-center justify-between">
-              <div
-                className="flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs font-semibold"
-                style={{
-                  background: selectedCat?.bg,
-                  border: `1px solid ${selectedCat?.border}`,
-                  color: selectedCat?.text,
-                }}
-              >
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: selectedCat?.dot }} />
-                {selectedCat?.label}
+            {/* Category picker */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Категория</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => setCategory(cat.value)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                    style={{
+                      background: category === cat.value ? cat.bg : 'transparent',
+                      border: `1px solid ${category === cat.value ? cat.border : 'var(--border)'}`,
+                      color: category === cat.value ? cat.text : 'var(--text-muted)',
+                    }}
+                  >
+                    <span>{cat.emoji}</span>
+                    {cat.shortLabel}
+                  </button>
+                ))}
               </div>
-              <button
-                onClick={() => setStep('category')}
-                className="text-xs btn-ghost"
-                style={{ padding: '4px 8px' }}
-              >
-                Change
-              </button>
             </div>
 
-            {/* Comment */}
+            {/* Comment textarea */}
             <div>
-              <label className="section-label block mb-1.5">Comment</label>
+              <label className="section-label block mb-1.5">Комментарий</label>
               <textarea
                 autoFocus
                 value={comment}
                 maxLength={COMMENT_MAX}
                 onChange={(e) => setComment(e.target.value.slice(0, COMMENT_MAX))}
-                placeholder="Describe the issue..."
+                placeholder={selectedCat?.defaultComment || 'Опиши проблему...'}
                 className="textarea-field text-sm h-20"
               />
               <CharCounter value={comment} max={COMMENT_MAX} warnAt={500} />
@@ -187,44 +242,43 @@ const FloatingTooltip: React.FC<FloatingTooltipProps> = ({
             <div>
               <label className="section-label flex items-center gap-1.5 mb-1.5">
                 <Lightbulb size={11} style={{ color: '#b45309' }} />
-                Suggestion (optional)
+                Предложение по исправлению (необязательно)
               </label>
               <textarea
                 value={suggestion}
                 maxLength={SUGGESTION_MAX}
                 onChange={(e) => setSuggestion(e.target.value.slice(0, SUGGESTION_MAX))}
-                placeholder="Proposed correction..."
-                className="textarea-field text-sm h-14"
+                placeholder="Как лучше написать?"
+                className="textarea-field text-sm h-12"
               />
-              <CharCounter value={suggestion} max={SUGGESTION_MAX} warnAt={300} />
             </div>
 
             {/* Actions */}
             <div className="flex gap-2 pt-1">
-              <button onClick={onClose} className="btn-ghost flex-1 justify-center text-xs">
-                Cancel
+              <button onClick={() => setMode('quick')} className="btn-ghost flex items-center gap-1 text-xs">
+                <X size={11} /> Назад
               </button>
               <button
-                onClick={handleAdd}
-                disabled={!comment.trim() || comment.length > COMMENT_MAX}
+                onClick={handleFullAdd}
+                disabled={!category || !comment.trim() || comment.length > COMMENT_MAX}
                 className="btn-primary flex-1 justify-center text-xs"
               >
                 <Check size={12} />
-                Add Comment
+                Добавить
               </button>
             </div>
           </div>
         )}
       </div>
+
       {/* Arrow tip (desktop only) */}
       {!isMobile && (
-        <div className="flex justify-center">
+        <div className={`flex justify-center ${isNearTop ? '-order-1 -mb-1.5' : '-mt-1.5'}`}>
           <div
-            className="w-3 h-3 -mt-1.5 transform rotate-45"
+            className={`w-3 h-3 transform rotate-45 ${isNearTop ? 'border-t border-l' : 'border-r border-b'}`}
             style={{
               background: 'var(--bg-card)',
-              borderRight: '1px solid var(--border-strong)',
-              borderBottom: '1px solid var(--border-strong)',
+              borderColor: 'var(--border-strong)',
             }}
           />
         </div>

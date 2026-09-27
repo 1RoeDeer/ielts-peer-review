@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Users, FileText, CheckCircle2, Edit3, Star,
-  Clock, Zap, ShieldCheck, AlertTriangle
+  Clock, Zap, ShieldCheck, AlertTriangle, Download
 } from 'lucide-react';
 import type { Essay, Review, User, Assignment } from '../../types';
 
@@ -22,9 +22,72 @@ export const TeacherSubmissionsView: React.FC<TeacherSubmissionsViewProps> = ({
 }) => {
   const getAuthor = (authorId: string): User | undefined => users.find((u) => u.id === authorId);
 
+  const handleExportCSV = () => {
+    if (submissions.length === 0) return;
+
+    const headers = [
+      'ФИО студента',
+      'Статус сдачи',
+      'Дата сдачи',
+      'Количество слов',
+      'Время написания (сек)',
+      'Темп (WPM)',
+      'Попыток вставки',
+      'Итоговый Band',
+      'Task Response (TR)',
+      'Coherence & Cohesion (CC)',
+      'Lexical Resource (LR)',
+      'Grammar Accuracy (GRA)',
+      'Количество рецензий',
+    ];
+
+    const rows = submissions.map((essay) => {
+      const author = getAuthor(essay.authorId);
+      const essayReviews = reviews.filter((r) => r.essayId === essay.id && r.isComplete);
+      const avgBand = essayReviews.length
+        ? (essayReviews.reduce((sum, r) => sum + r.overallBand, 0) / essayReviews.length).toFixed(1)
+        : '—';
+
+      const primaryReview = essayReviews[0];
+      const tr = primaryReview?.criteria.taskResponse.band.toFixed(1) || '—';
+      const cc = primaryReview?.criteria.coherence.band.toFixed(1) || '—';
+      const lr = primaryReview?.criteria.lexicalResource.band.toFixed(1) || '—';
+      const gra = primaryReview?.criteria.grammar.band.toFixed(1) || '—';
+
+      return [
+        `"${author?.name || 'Студент'}"`,
+        `"${essay.status === 'submitted' ? 'Сдано' : essay.status}"`,
+        `"${essay.submittedAt ? new Date(essay.submittedAt).toLocaleDateString('ru-RU') : '—'}"`,
+        essay.wordCount,
+        essay.timeSpentSeconds || 0,
+        essay.averageWpm || 0,
+        essay.pasteAttempts || 0,
+        avgBand,
+        tr,
+        cc,
+        lr,
+        gra,
+        essayReviews.length,
+      ].join(';');
+    });
+
+    // Add UTF-8 BOM so Excel opens Russian text correctly
+    const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const safeTitle = (_assignment.title || 'Assignment').replace(/[^a-zA-Zа-яА-Я0-9]/g, '_');
+    link.setAttribute('download', `Ведомость_${safeTitle}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="glass-card p-4 sm:p-6 space-y-5">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-700/40">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-700/40">
         <div>
           <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
             <Users size={16} className="text-violet-400" />
@@ -34,6 +97,18 @@ export const TeacherSubmissionsView: React.FC<TeacherSubmissionsViewProps> = ({
             Просматривайте эссе, отчёты о честности набора текста и выставляйте экспертные баллы
           </p>
         </div>
+
+        {submissions.length > 0 && (
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="btn-secondary self-start sm:self-auto flex items-center gap-1.5 text-xs py-2 px-3.5"
+            title="Скачать оценки и статистику в формате Excel / CSV"
+          >
+            <Download size={13} className="text-violet-400" />
+            Скачать ведомость (Excel / CSV)
+          </button>
+        )}
       </div>
 
       {submissions.length === 0 ? (

@@ -13,6 +13,7 @@ const CATEGORY_COLORS: Record<ErrorCategory, { bg: string; border: string; text:
   vocabulary:  { bg: 'rgba(37,99,235,0.10)',   border: 'rgba(37,99,235,0.35)',   text: '#1d4ed8', dot: '#2563eb' },
   punctuation: { bg: 'rgba(161,98,7,0.10)',    border: 'rgba(161,98,7,0.35)',    text: '#92400e', dot: '#b45309' },
   style:       { bg: 'rgba(109,40,217,0.10)',  border: 'rgba(109,40,217,0.35)',  text: '#6d28d9', dot: '#7c3aed' },
+  praise:      { bg: 'rgba(22,163,74,0.10)',   border: 'rgba(22,163,74,0.35)',   text: '#15803d', dot: '#16a34a' },
 };
 
 const HIGHLIGHT_CLASSES: Record<ErrorCategory, string> = {
@@ -20,6 +21,7 @@ const HIGHLIGHT_CLASSES: Record<ErrorCategory, string> = {
   vocabulary:  'highlight-vocabulary',
   punctuation: 'highlight-punctuation',
   style:       'highlight-style',
+  praise:      'highlight-praise',
 };
 
 function renderParagraph(
@@ -99,7 +101,7 @@ const FeedbackViewer: React.FC<Props> = ({ essayContent, review }) => {
 
   const categoryCount = comments.reduce<Record<ErrorCategory, number>>(
     (acc, c) => { acc[c.category] = (acc[c.category] || 0) + 1; return acc; },
-    { grammar: 0, vocabulary: 0, punctuation: 0, style: 0 }
+    { grammar: 0, vocabulary: 0, punctuation: 0, style: 0, praise: 0 }
   );
 
   return (

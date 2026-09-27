@@ -15,6 +15,7 @@ const CATEGORY_COLORS: Record<ErrorCategory, { bg: string; border: string; text:
   vocabulary:  { bg: 'rgba(37,99,235,0.10)',   border: 'rgba(37,99,235,0.35)',   text: '#1d4ed8', dot: '#2563eb',  label: 'Vocabulary' },
   punctuation: { bg: 'rgba(161,98,7,0.10)',    border: 'rgba(161,98,7,0.35)',    text: '#92400e', dot: '#b45309',  label: 'Punctuation' },
   style:       { bg: 'rgba(109,40,217,0.10)',  border: 'rgba(109,40,217,0.35)',  text: '#6d28d9', dot: '#7c3aed',  label: 'Style & Cohesion' },
+  praise:      { bg: 'rgba(22,163,74,0.10)',   border: 'rgba(22,163,74,0.35)',   text: '#15803d', dot: '#16a34a',  label: 'Great Thought' },
 };
 
 const DiffModal: React.FC<Props> = ({ original, suggestion, comment, category, onClose }) => {

@@ -231,7 +231,7 @@ const ResultsPage: React.FC = () => {
 
   // Error category breakdown
   const allInlineComments = receivedReviews.flatMap((r) => r.inlineComments);
-  const categoryBreakdown: Record<ErrorCategory, number> = { grammar: 0, vocabulary: 0, punctuation: 0, style: 0 };
+  const categoryBreakdown: Record<ErrorCategory, number> = { grammar: 0, vocabulary: 0, punctuation: 0, style: 0, praise: 0 };
   allInlineComments.forEach((c) => { categoryBreakdown[c.category]++; });
   const totalComments = allInlineComments.length || 1;
 
@@ -240,6 +240,7 @@ const ResultsPage: React.FC = () => {
     vocabulary:  { dot: '#2563eb', bg: 'rgba(37,99,235,0.10)',   label: 'Vocabulary' },
     punctuation: { dot: '#b45309', bg: 'rgba(161,98,7,0.10)',    label: 'Punctuation' },
     style:       { dot: '#7c3aed', bg: 'rgba(109,40,217,0.10)',  label: 'Style' },
+    praise:      { dot: '#16a34a', bg: 'rgba(22,163,74,0.10)',   label: 'Praise' },
   };
 
   const bestBand = receivedReviews.length ? Math.max(...receivedReviews.map((r) => r.overallBand)) : 0;

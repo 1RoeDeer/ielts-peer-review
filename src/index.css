@@ -334,6 +334,15 @@
   }
   .highlight-style:hover { background: rgba(109,40,217,0.22); }
 
+  .highlight-praise {
+    background: rgba(22,163,74,0.12);
+    border-bottom: 2px solid rgba(22,163,74,0.6);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .highlight-praise:hover { background: rgba(22,163,74,0.22); }
+
   /* ── Stat card ── */
   .stat-card {
     background: var(--bg-card);

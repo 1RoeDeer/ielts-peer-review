@@ -23,6 +23,7 @@ const ReviewPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [mobileTab, setMobileTab] = useState<'essay' | 'criteria'>('essay');
+  const [desktopView, setDesktopView] = useState<'split' | 'wide'>('split');
 
   const essay = essays.find((e) => e.id === essayId);
   const assignment = assignments.find((a) => a.id === essay?.assignmentId);
@@ -122,6 +123,24 @@ const ReviewPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Desktop Layout Switcher */}
+          <div className="hidden lg:flex items-center rounded-lg bg-slate-900/80 p-0.5 border border-slate-700/60 text-xs">
+            <button
+              type="button"
+              onClick={() => setDesktopView('split')}
+              className={`px-2.5 py-1 rounded transition-all ${desktopView === 'split' ? 'bg-violet-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-white'}`}
+            >
+              Стандарт (60/40)
+            </button>
+            <button
+              type="button"
+              onClick={() => setDesktopView('wide')}
+              className={`px-2.5 py-1 rounded transition-all ${desktopView === 'wide' ? 'bg-violet-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-white'}`}
+            >
+              Широкий текст (75%)
+            </button>
+          </div>
+
           <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400">
             <MessageSquare size={12} />
             <span>{inlineCount} коммент.</span>
@@ -171,7 +190,9 @@ const ReviewPage: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Essay Text Panel */}
         <div
-          className={`flex flex-col overflow-hidden w-full md:w-3/5 border-r border-slate-800 ${
+          className={`flex flex-col overflow-hidden w-full ${
+            desktopView === 'wide' ? 'md:w-3/4' : 'md:w-3/5'
+          } border-r border-slate-800 transition-all duration-200 ${
             mobileTab === 'essay' ? 'flex' : 'hidden md:flex'
           }`}
         >
@@ -180,7 +201,9 @@ const ReviewPage: React.FC = () => {
 
         {/* Right: IELTS Criteria Panel */}
         <div
-          className={`flex flex-col overflow-hidden w-full md:w-2/5 ${
+          className={`flex flex-col overflow-hidden w-full ${
+            desktopView === 'wide' ? 'md:w-1/4' : 'md:w-2/5'
+          } transition-all duration-200 ${
             mobileTab === 'criteria' ? 'flex' : 'hidden md:flex'
           }`}
         >

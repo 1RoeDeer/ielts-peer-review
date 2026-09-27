@@ -8,10 +8,11 @@ const MAX_COMMENT_CHARS = 3000;
 const MAX_SUGGESTION_CHARS = 1500;
 
 const CATEGORY_META: Record<ErrorCategory, { label: string; dot: string; bg: string; border: string; text: string }> = {
-  grammar:     { label: 'Grammar',         dot: '#dc2626', bg: 'rgba(220,38,38,0.08)',   border: 'rgba(220,38,38,0.25)',   text: '#b91c1c' },
-  vocabulary:  { label: 'Vocabulary',      dot: '#2563eb', bg: 'rgba(37,99,235,0.08)',   border: 'rgba(37,99,235,0.25)',   text: '#1d4ed8' },
-  punctuation: { label: 'Punctuation',     dot: '#b45309', bg: 'rgba(161,98,7,0.08)',    border: 'rgba(161,98,7,0.25)',    text: '#92400e' },
-  style:       { label: 'Style & Cohesion',dot: '#7c3aed', bg: 'rgba(109,40,217,0.08)', border: 'rgba(109,40,217,0.25)', text: '#6d28d9' },
+  grammar:     { label: 'Грамматика',          dot: '#dc2626', bg: 'rgba(220,38,38,0.08)',   border: 'rgba(220,38,38,0.25)',   text: '#f87171' },
+  vocabulary:  { label: 'Словарный запас',      dot: '#d97706', bg: 'rgba(217,119,6,0.08)',   border: 'rgba(217,119,6,0.25)',   text: '#fbbf24' },
+  punctuation: { label: 'Пунктуация',           dot: '#b45309', bg: 'rgba(161,98,7,0.08)',    border: 'rgba(161,98,7,0.25)',    text: '#92400e' },
+  style:       { label: 'Стиль и связность',    dot: '#7c3aed', bg: 'rgba(109,40,217,0.08)', border: 'rgba(109,40,217,0.25)', text: '#c084fc' },
+  praise:      { label: 'Отличная мысль! 🌟',  dot: '#16a34a', bg: 'rgba(22,163,74,0.08)',  border: 'rgba(22,163,74,0.25)',  text: '#4ade80' },
 };
 
 interface CommentCardProps {

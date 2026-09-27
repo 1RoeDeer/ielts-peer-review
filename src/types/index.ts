@@ -1,5 +1,5 @@
 export type UserRole = 'teacher' | 'student';
-export type ErrorCategory = 'grammar' | 'vocabulary' | 'punctuation' | 'style';
+export type ErrorCategory = 'grammar' | 'vocabulary' | 'punctuation' | 'style' | 'praise';
 export type EssayType = 'opinion' | 'discussion' | 'problem-solution' | 'advantages-disadvantages' | 'task1';
 export type SubmissionStatus = 'draft' | 'submitted' | 'reviewing' | 'reviewed';
 export type NotificationType =

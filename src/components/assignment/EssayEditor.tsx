@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Clock, Save, Send, AlertCircle, ShieldAlert, CheckCircle2,
-  Zap, AlertTriangle
+  Zap, AlertTriangle, AlignLeft, Sparkles
 } from 'lucide-react';
 import type { Assignment, Essay } from '../../types';
 
@@ -41,6 +41,19 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
   const minWords = assignment.minWords;
   const charCount = essayText.length;
   const isMinMet = wordCount >= minWords;
+
+  // Paragraph structure analysis (IELTS recommends 4 paragraphs: Intro, Body 1, Body 2, Conclusion)
+  const rawParagraphs = essayText.split(/\n+/).map((p) => p.trim()).filter(Boolean);
+  const paraStats = rawParagraphs.map((p, idx) => {
+    const pWords = p.split(/\s+/).filter(Boolean).length;
+    let label = `Абзац ${idx + 1}`;
+    let recommended = '60-90';
+    if (idx === 0) { label = 'Введение (Intro)'; recommended = '35-50'; }
+    else if (idx === 1) { label = 'Аргумент 1 (Body 1)'; recommended = '80-100'; }
+    else if (idx === 2) { label = 'Аргумент 2 (Body 2)'; recommended = '80-100'; }
+    else if (idx === 3) { label = 'Заключение (Conclusion)'; recommended = '30-45'; }
+    return { label, words: pWords, recommended, idx };
+  });
 
   // Honesty metrics state & refs
   const [secondsSpent, setSecondsSpent] = useState<number>(existingDraft?.timeSpentSeconds || 0);
@@ -254,6 +267,45 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
           <span>Анти-копипаст активен</span>
         </div>
       </div>
+
+      {/* Paragraph Structure Breakdown (IELTS 4-Paragraph Analyzer) */}
+      {rawParagraphs.length > 0 && (
+        <div className="rounded-xl p-3 bg-slate-900/60 border border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 flex-wrap gap-1">
+            <span className="flex items-center gap-1.5 text-slate-200">
+              <AlignLeft size={13} className="text-violet-400" />
+              Структура эссе по абзацам ({rawParagraphs.length} {rawParagraphs.length === 4 ? 'из 4 — отлично!' : 'абз.'}):
+            </span>
+            <span className="text-[10px] text-slate-400 flex items-center gap-1">
+              <Sparkles size={11} className="text-amber-400" />
+              IELTS стандарт: 4 абзаца
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {paraStats.map((st) => (
+              <div
+                key={st.idx}
+                className={`p-2 rounded-lg border transition-all ${
+                  st.idx === 3 && rawParagraphs.length === 4
+                    ? 'bg-violet-950/20 border-violet-800/40'
+                    : 'bg-slate-850/70 border-slate-800'
+                }`}
+              >
+                <div className="text-[10px] font-medium text-slate-400 truncate">{st.label}</div>
+                <div className="flex items-baseline justify-between mt-0.5">
+                  <span className="text-xs font-bold text-white">
+                    {st.words} <span className="font-normal text-[10px] text-slate-400">слов</span>
+                  </span>
+                  <span className="text-[9px] text-slate-500 font-mono">
+                    рек. {st.recommended}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Counters & Validation */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
