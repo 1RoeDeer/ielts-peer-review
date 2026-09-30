@@ -19,7 +19,7 @@ const AppShell: React.FC<AppShellProps> = ({ children, title, subtitle }) => {
   }, [theme]);
 
   return (
-    <div className="flex h-screen overflow-hidden relative" style={{ background: 'var(--bg)' }}>
+    <div className="flex h-screen overflow-hidden relative bg-page">
       {/* Mobile sidebar backdrop overlay */}
       {sidebarOpen && (
         <div
@@ -33,10 +33,9 @@ const AppShell: React.FC<AppShellProps> = ({ children, title, subtitle }) => {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header title={title} subtitle={subtitle} />
 
-        {/* Main content — extra bottom padding on mobile to avoid BottomBar overlap */}
+        {/* Main content — transparent so aurora shows through page background */}
         <main
           className="flex-1 overflow-auto pb-16 md:pb-0"
-          style={{ background: 'var(--bg)' }}
         >
           {children}
         </main>
