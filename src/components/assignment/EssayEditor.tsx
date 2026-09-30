@@ -63,11 +63,71 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
   const prevTextRef = useRef<string>(essayText);
   const lastActiveTimestamp = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Stable callback refs so native listeners don't need re-registration
+  const onPasteBlockedRef = useRef(onPasteBlocked);
+  useEffect(() => { onPasteBlockedRef.current = onPasteBlocked; }, [onPasteBlocked]);
 
   // Sync prevTextRef when essayText changes externally
   useEffect(() => {
     prevTextRef.current = essayText;
   }, [essayText]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // NATIVE DOM LEVEL PROTECTION (runs at capture phase, BEFORE React)
+  // Catches: iOS contact autofill, Yank/kill-ring, spellcheck replacement,
+  //          "Insert from iPhone" / vCard paste, OS-level text injection.
+  // ─────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    const BLOCKED_INPUT_TYPES = new Set([
+      'insertFromPaste',
+      'insertFromPasteAsQuotation',
+      'insertFromYank',          // iOS kill-ring / yank buffer
+      'insertFromDrop',
+      'insertReplacementText',   // spellcheck / autocorrect bulk replacement
+      'insertTranspose',
+      'historyUndo',             // undo could restore pasted content
+      'historyRedo',
+    ]);
+
+    // Block known paste-like input types at native beforeinput level
+    const onNativeBeforeInput = (e: Event) => {
+      const ie = e as InputEvent;
+      if (BLOCKED_INPUT_TYPES.has(ie.inputType)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setPasteAttempts((p) => p + 1);
+        onPasteBlockedRef.current();
+      }
+    };
+
+    // Fallback delta guard — catches contact autofill via keyboard suggestion
+    // bar, IME composition dumps, and anything that slips past beforeinput.
+    const onNativeInput = () => {
+      const current = el.value;
+      const prev = prevTextRef.current;
+      const delta = current.length - prev.length;
+
+      if (delta > 5) {
+        // Restore immediately at DOM level before React sees it
+        el.value = prev;
+        setPasteAttempts((p) => p + 1);
+        onPasteBlockedRef.current();
+      }
+    };
+
+    el.addEventListener('beforeinput', onNativeBeforeInput, { capture: true, passive: false });
+    el.addEventListener('input',       onNativeInput,       { capture: true });
+
+    return () => {
+      el.removeEventListener('beforeinput', onNativeBeforeInput, { capture: true });
+      el.removeEventListener('input',       onNativeInput,       { capture: true });
+    };
+  }, []);
 
   // Active typing timer: increments only when user was active within last 25 seconds
   useEffect(() => {
@@ -248,6 +308,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
       {/* Editor Textarea */}
       <div className="relative">
         <textarea
+          ref={textareaRef}
           value={essayText}
           onChange={handleTextChange}
           onPaste={handlePaste}
@@ -257,8 +318,16 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
           onBeforeInput={handleBeforeInput}
           maxLength={MAX_ESSAY_CHARS}
           rows={12}
-          placeholder="Начните писать ваше эссе здесь... (Вставка текста с клавиатуры или буфера заблокирована — пишите самостоятельно)"
+          placeholder="Начните писать ваше эссе здесь... (Вставка текста заблокирована — пишите самостоятельно)"
           className="w-full rounded-xl p-3 sm:p-4 bg-slate-900/60 border border-slate-700/60 text-slate-100 placeholder-slate-500 font-serif text-sm sm:text-base leading-relaxed focus:outline-none focus:border-violet-500 transition-all resize-y select-text"
+          /* ──── Security attributes ──── */
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          data-gramm="false"
+          data-gramm_editor="false"
+          data-enable-grammarly="false"
         />
 
         {/* Security badge overlay */}
