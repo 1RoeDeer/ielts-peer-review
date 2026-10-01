@@ -116,7 +116,7 @@ const ReviewPage: React.FC = () => {
               <div className="text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
                 <span>{classroom?.name}</span>
                 <span>·</span>
-                <span className="text-violet-300 font-medium">Автор: {author?.name || 'Ученик'}</span>
+                <span className="text-blue-300 font-medium">Автор: {author?.name || 'Ученик'}</span>
               </div>
             </div>
           </div>
@@ -128,14 +128,14 @@ const ReviewPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setDesktopView('split')}
-              className={`px-2.5 py-1 rounded transition-all ${desktopView === 'split' ? 'bg-violet-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-white'}`}
+              className={`px-2.5 py-1 rounded transition-all ${desktopView === 'split' ? 'bg-blue-600 text-white font-semibold shadow-sm shadow-blue-500/20' : 'text-slate-400 hover:text-white'}`}
             >
               Стандарт (60/40)
             </button>
             <button
               type="button"
               onClick={() => setDesktopView('wide')}
-              className={`px-2.5 py-1 rounded transition-all ${desktopView === 'wide' ? 'bg-violet-600 text-white font-semibold shadow-sm' : 'text-slate-400 hover:text-white'}`}
+              className={`px-2.5 py-1 rounded transition-all ${desktopView === 'wide' ? 'bg-blue-600 text-white font-semibold shadow-sm shadow-blue-500/20' : 'text-slate-400 hover:text-white'}`}
             >
               Широкий текст (75%)
             </button>
@@ -165,7 +165,7 @@ const ReviewPage: React.FC = () => {
           onClick={() => setMobileTab('essay')}
           className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-all border-b-2 ${
             mobileTab === 'essay'
-              ? 'border-violet-500 text-violet-300 bg-violet-600/10'
+              ? 'border-blue-500 text-blue-300 bg-blue-600/10'
               : 'border-transparent text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -177,7 +177,7 @@ const ReviewPage: React.FC = () => {
           onClick={() => setMobileTab('criteria')}
           className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-all border-b-2 ${
             mobileTab === 'criteria'
-              ? 'border-violet-500 text-violet-300 bg-violet-600/10'
+              ? 'border-blue-500 text-blue-300 bg-blue-600/10'
               : 'border-transparent text-slate-400 hover:text-slate-200'
           }`}
         >

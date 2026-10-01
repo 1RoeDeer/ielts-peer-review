@@ -68,7 +68,7 @@ function renderParagraph(
       nodes.push(
         <span
           key={comment.id}
-          className={`${CATEGORY_CLASS[comment.category] || 'highlight-grammar'} ${activeId === comment.id ? 'ring-2 ring-violet-400 rounded' : ''}`}
+          className={`${CATEGORY_CLASS[comment.category] || 'highlight-grammar'} ${activeId === comment.id ? 'ring-2 ring-blue-400 rounded' : ''}`}
           onClick={(e) => { e.stopPropagation(); onClickHighlight(comment.id); }}
         >
           {paraText.slice(relStart, relEnd)}
@@ -185,7 +185,7 @@ const EssayPanel: React.FC<EssayPanelProps> = ({ essayText }) => {
             <button
               type="button"
               onClick={() => setFontSize('normal')}
-              className={`px-2 py-1 rounded transition-colors ${fontSize === 'normal' ? 'bg-violet-600 text-white font-bold' : 'hover:text-white'}`}
+              className={`px-2 py-1 rounded transition-colors ${fontSize === 'normal' ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20' : 'hover:text-white'}`}
               title="Стандартный шрифт"
             >
               A
@@ -193,7 +193,7 @@ const EssayPanel: React.FC<EssayPanelProps> = ({ essayText }) => {
             <button
               type="button"
               onClick={() => setFontSize('large')}
-              className={`px-2 py-1 rounded transition-colors text-xs font-semibold ${fontSize === 'large' ? 'bg-violet-600 text-white font-bold' : 'hover:text-white'}`}
+              className={`px-2 py-1 rounded transition-colors text-xs font-semibold ${fontSize === 'large' ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20' : 'hover:text-white'}`}
               title="Крупный шрифт (удобно для чтения)"
             >
               A+
@@ -201,7 +201,7 @@ const EssayPanel: React.FC<EssayPanelProps> = ({ essayText }) => {
             <button
               type="button"
               onClick={() => setFontSize('huge')}
-              className={`px-2 py-1 rounded transition-colors text-sm font-bold ${fontSize === 'huge' ? 'bg-violet-600 text-white font-bold' : 'hover:text-white'}`}
+              className={`px-2 py-1 rounded transition-colors text-sm font-bold ${fontSize === 'huge' ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20' : 'hover:text-white'}`}
               title="Максимальный шрифт"
             >
               A++
@@ -242,7 +242,7 @@ const EssayPanel: React.FC<EssayPanelProps> = ({ essayText }) => {
           ))}
         </div>
 
-        <span className="text-[11px] text-violet-400 font-medium hidden lg:flex items-center gap-1">
+        <span className="text-[11px] text-blue-400 font-medium hidden lg:flex items-center gap-1">
           <Sparkles size={11} /> Выделите текст мышкой или пальцем
         </span>
       </div>
@@ -288,7 +288,7 @@ const EssayPanel: React.FC<EssayPanelProps> = ({ essayText }) => {
               boxShadow: 'var(--shadow-md)',
             }}
           >
-            <Info size={13} className="text-violet-400 flex-shrink-0" />
+            <Info size={13} className="text-blue-400 flex-shrink-0" />
             <span>Выделите слово или фразу, чтобы прикрепить стикер проверки</span>
           </div>
         )}

@@ -51,8 +51,8 @@ const ClassroomPage: React.FC = () => {
   };
 
   const essayTypeColors: Record<string, string> = {
-    opinion: 'bg-violet-900/40 text-violet-300 border-violet-700/40',
-    discussion: 'bg-blue-900/40 text-blue-300 border-blue-700/40',
+    opinion: 'bg-blue-900/40 text-blue-300 border-blue-700/40',
+    discussion: 'bg-indigo-900/40 text-indigo-300 border-indigo-700/40',
     'problem-solution': 'bg-orange-900/40 text-orange-300 border-orange-700/40',
     'advantages-disadvantages': 'bg-teal-900/40 text-teal-300 border-teal-700/40',
     task1: 'bg-pink-900/40 text-pink-300 border-pink-700/40',
@@ -70,7 +70,7 @@ const ClassroomPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-600/40">
-                <code className="text-sm font-mono text-violet-300">{classroom.code}</code>
+                <code className="text-sm font-mono text-blue-300">{classroom.code}</code>
                 <button onClick={handleCopyCode} className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded">
                   {copied ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
                 </button>
@@ -96,7 +96,7 @@ const ClassroomPage: React.FC = () => {
               onClick={() => setTab(key as any)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all ${
                 tab === key
-                  ? 'border-violet-500 text-violet-300'
+                  ? 'border-blue-500 text-blue-300 font-semibold'
                   : 'border-transparent text-slate-500 hover:text-slate-300'
               }`}
             >
@@ -196,8 +196,8 @@ const ClassroomPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-violet-950/20 border border-violet-800/30 text-xs text-violet-300 flex items-center gap-2">
-              <Users size={14} className="text-violet-400 flex-shrink-0" />
+            <div className="p-3 rounded-xl bg-blue-950/20 border border-blue-800/30 text-xs text-blue-300 flex items-center gap-2">
+              <Users size={14} className="text-blue-400 flex-shrink-0" />
               <span>
                 Нажмите на ученика, чтобы просмотреть его эссе по этому классу и перейти к взаимному оцениванию.
               </span>
@@ -207,7 +207,7 @@ const ClassroomPage: React.FC = () => {
               <div className="glass-card p-8 text-center text-slate-500 text-sm">
                 {students.length === 0 ? (
                   <>
-                    No students have joined yet. Share code <code className="text-violet-400">{classroom.code}</code>.
+                    No students have joined yet. Share code <code className="text-blue-400">{classroom.code}</code>.
                   </>
                 ) : (
                   'Ученики по заданному запросу не найдены.'
@@ -234,7 +234,7 @@ const ClassroomPage: React.FC = () => {
                     <div
                       key={student.id}
                       className={`glass-card transition-all overflow-hidden ${
-                        isMe ? 'border-violet-600/30 bg-violet-950/10' : 'hover:border-slate-600'
+                        isMe ? 'border-blue-500/30 bg-blue-950/15' : 'hover:border-slate-600'
                       }`}
                     >
                       {/* Student Card Header */}
@@ -246,7 +246,7 @@ const ClassroomPage: React.FC = () => {
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 border ${
                               isMe
-                                ? 'bg-violet-600 text-white border-violet-400'
+                                ? 'bg-blue-600 text-white border-blue-400 shadow-sm shadow-blue-500/20'
                                 : 'bg-slate-800 text-slate-200 border-slate-700'
                             }`}
                           >
@@ -256,7 +256,7 @@ const ClassroomPage: React.FC = () => {
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-semibold text-slate-200">{student.name}</span>
                               {isMe && (
-                                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-violet-600/20 text-violet-300 border border-violet-500/30">
+                                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-600/20 text-blue-300 border border-blue-500/30">
                                   Вы
                                 </span>
                               )}

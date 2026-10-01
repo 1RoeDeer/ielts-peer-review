@@ -221,7 +221,7 @@ const ReviewsPage: React.FC = () => {
                     <div
                       key={student.id}
                       className={`glass-card transition-all overflow-hidden ${
-                        isMe ? 'border-violet-600/30 bg-violet-950/10' : 'hover:border-slate-600'
+                        isMe ? 'border-blue-500/30 bg-blue-950/15' : 'hover:border-slate-600'
                       }`}
                     >
                       {/* Student Header Card */}
@@ -233,7 +233,7 @@ const ReviewsPage: React.FC = () => {
                           <div
                             className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 border ${
                               isMe
-                                ? 'bg-violet-600 text-white border-violet-400'
+                                ? 'bg-blue-600 text-white border-blue-400 shadow-sm shadow-blue-500/20'
                                 : 'bg-slate-800 text-slate-200 border-slate-700'
                             }`}
                           >
@@ -244,7 +244,7 @@ const ReviewsPage: React.FC = () => {
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-bold text-slate-100">{student.name}</span>
                               {isMe && (
-                                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-violet-600/20 text-violet-300 border border-violet-500/30">
+                                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-600/20 text-blue-300 border border-blue-500/30">
                                   Вы
                                 </span>
                               )}
@@ -394,7 +394,7 @@ const ReviewsPage: React.FC = () => {
                   >
                     <div className="space-y-2 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-violet-600/15 text-violet-300 font-semibold border border-violet-500/20">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-600/15 text-blue-300 font-semibold border border-blue-500/30">
                           {classroom?.name || 'Класс'}
                         </span>
                         <span className="text-xs font-bold text-slate-300">
@@ -422,7 +422,7 @@ const ReviewsPage: React.FC = () => {
                         <span>·</span>
                         <span>{essay.submittedAt ? new Date(essay.submittedAt).toLocaleDateString() : '—'}</span>
                         {essay.isExamMode && (
-                          <span className="text-violet-400 font-medium">⏱️ Exam Simulation</span>
+                          <span className="text-blue-400 font-medium">⏱️ Exam Simulation</span>
                         )}
                       </div>
 
@@ -543,7 +543,7 @@ const ReviewsPage: React.FC = () => {
                       <div className="text-sm font-bold text-slate-100">{assignment?.title || 'Эссе'}</div>
                       <div className="text-xs text-slate-400 mt-0.5">
                         Автор: <span className="text-slate-200 font-semibold">{author?.name || 'Ученик'}</span> · Проверил:{' '}
-                        <span className="text-violet-300 font-semibold">{reviewer?.name || 'Рецензент'}</span>
+                        <span className="text-blue-300 font-semibold">{reviewer?.name || 'Рецензент'}</span>
                       </div>
                     </div>
 

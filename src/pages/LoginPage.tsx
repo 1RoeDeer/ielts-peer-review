@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
 import {
   GraduationCap, BookOpen, ArrowRight, Star, CheckCheck,
-  Pen, UserPlus, LogIn, Sparkles, Eye, EyeOff, Loader2,
+  Pen, UserPlus, LogIn, Sparkles, Eye, EyeOff, Loader2, ShieldCheck,
 } from 'lucide-react';
 import type { UserRole } from '../types';
 
@@ -32,11 +32,6 @@ function nameToFakeEmail(name: string): string {
   return `${slug}@ieltsclass.com`;
 }
 
-/** Извлекаем "имя пользователя" из email для формы входа */
-function emailToDisplayName(email: string): string {
-  return email.replace('@ieltsclass.local', '').replace(/\./g, ' ');
-}
-
 const LoginPage: React.FC = () => {
   const { theme } = useStore();
   const navigate = useNavigate();
@@ -48,7 +43,7 @@ const LoginPage: React.FC = () => {
   const [regPassword, setRegPassword] = useState('');
   const [regRole, setRegRole] = useState<UserRole>('student');
 
-  // Вход — имя + пароль (email генерируется из имени)
+  // Вход — имя + пароль
   const [loginName, setLoginName] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
@@ -89,7 +84,6 @@ const LoginPage: React.FC = () => {
     });
 
     if (signUpErr) {
-      // Если имя уже занято — подсказываем
       if (signUpErr.message.toLowerCase().includes('already registered') ||
           signUpErr.message.toLowerCase().includes('already exists')) {
         setError(`Имя "${regName.trim()}" уже занято. Попробуй добавить фамилию или цифру.`);
@@ -100,24 +94,24 @@ const LoginPage: React.FC = () => {
       return;
     }
 
-    // Сразу входим
     const { error: signInErr } = await supabase.auth.signInWithPassword({
       email: fakeEmail,
       password: regPassword,
     });
+
     setLoading(false);
-    if (!signInErr) {
-      navigate('/dashboard');
-    } else {
-      setError('Зарегистрировался! Теперь войди под своим именем.');
+    if (signInErr) {
+      setError('Аккаунт создан! Теперь переключись на вкладку "Войти" и введи данные.');
       setMode('login');
-      setLoginName(regName);
+      return;
     }
+
+    navigate('/dashboard');
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginName.trim()) { setError('Введи своё имя.'); return; }
+    if (!loginName.trim()) { setError('Введи имя.'); return; }
     if (!loginPassword) { setError('Введи пароль.'); return; }
 
     setLoading(true);
@@ -136,66 +130,69 @@ const LoginPage: React.FC = () => {
     navigate('/dashboard');
   };
 
-  void emailToDisplayName; // suppress unused
-
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6"
-      style={{ background: 'var(--bg)' }}
-    >
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      {/* Background Decorative Rings / Ambient Glow */}
+      <div className="absolute top-1/4 -left-40 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+
       {/* Brand Header */}
-      <div className="flex items-center gap-4 mb-3">
-        <div
-          className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center"
-          style={{ background: 'var(--accent)', boxShadow: 'var(--shadow-lg)' }}
-        >
-          <GraduationCap size={28} style={{ color: 'var(--text-inverse)' }} />
+      <div className="flex flex-col items-center text-center mb-6 relative z-10 animate-fade-in">
+        <div className="relative mb-3 group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl blur opacity-40 group-hover:opacity-75 transition duration-500" />
+          <div className="relative w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 text-white shadow-xl shadow-blue-500/25 ring-1 ring-white/30">
+            <GraduationCap size={28} />
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>
-            IELTS Peer Review
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400">Writing Excellence & Collaborative Learning Platform</p>
-        </div>
+
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight gradient-text-sapphire">
+          IELTS Peer Review
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-sm">
+          Платформа написания эссе, взаимной оценки и подготовки на Band 8+
+        </p>
       </div>
 
-      {/* Feature Pills */}
-      <div className="flex flex-wrap items-center justify-center gap-2 mb-8 max-w-xl">
+      {/* Feature Badges */}
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-6 max-w-xl relative z-10">
         {[
           { icon: Pen, text: 'Редактор эссе без копипаста' },
           { icon: Star, text: 'Официальные критерии IELTS' },
-          { icon: CheckCheck, text: 'Модульные взаимные проверки' },
+          { icon: CheckCheck, text: 'Взаимная проверка работ' },
           { icon: Sparkles, text: 'Разбор Band 9 образцов' },
         ].map((f) => (
           <div
             key={f.text}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-900/60 border border-slate-700/60 text-slate-300"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-900/60 border border-slate-700/50 text-slate-300 backdrop-blur-md hover:border-blue-500/40 transition-colors shadow-sm"
           >
-            <f.icon size={12} className="text-violet-400" />
-            {f.text}
+            <f.icon size={12} className="text-blue-400" />
+            <span>{f.text}</span>
           </div>
         ))}
       </div>
 
       {/* Auth Card */}
-      <div className="w-full max-w-md glass-card p-6 sm:p-8 space-y-5 animate-scale-in">
-
-        {/* Tabs */}
-        <div className="flex items-center p-1 rounded-xl bg-slate-900/70 border border-slate-700/60">
+      <div className="w-full max-w-md glass-card p-6 sm:p-8 space-y-6 relative z-10 animate-scale-in">
+        {/* Sleek Segmented Switch */}
+        <div className="flex p-1 rounded-xl bg-slate-900/80 border border-slate-800 shadow-inner">
           <button
             type="button"
             onClick={() => { setMode('login'); setError(''); }}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all ${
-              mode === 'login' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ${
+              mode === 'login'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
             }`}
           >
-            <LogIn size={14} /> Войти
+            <LogIn size={14} /> Вход
           </button>
           <button
             type="button"
             onClick={() => { setMode('register'); setError(''); }}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-2 transition-all ${
-              mode === 'register' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ${
+              mode === 'register'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
             }`}
           >
             <UserPlus size={14} /> Регистрация
@@ -206,12 +203,12 @@ const LoginPage: React.FC = () => {
         {mode === 'register' && (
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <h2 className="text-base font-bold text-slate-100 mb-0.5">Создай аккаунт</h2>
-              <p className="text-xs text-slate-400">Email не нужен — просто имя и пароль 👇</p>
+              <h2 className="text-base font-bold text-slate-100 mb-0.5">Создание профиля</h2>
+              <p className="text-xs text-slate-400">Email не требуется — только имя и пароль</p>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                 Имя и фамилия
               </label>
               <input
@@ -224,13 +221,13 @@ const LoginPage: React.FC = () => {
                 className="input-field text-sm"
               />
               <p className="text-[11px] text-slate-500 mt-1">
-                Вводи точно — это твой логин для входа
+                Используется как логин для входа в платформу
               </p>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
-                Пароль <span className="font-normal normal-case">(минимум 6 символов)</span>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Пароль <span className="text-slate-500 font-normal">(от 6 символов)</span>
               </label>
               <div className="relative">
                 <input
@@ -241,60 +238,79 @@ const LoginPage: React.FC = () => {
                   placeholder="••••••••"
                   className="input-field text-sm pr-10"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1"
+                >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-                Роль
+              <label className="block text-xs font-semibold text-slate-300 mb-2">
+                Ваша роль
               </label>
               <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => setRegRole('student')}
+                <button
+                  type="button"
+                  onClick={() => setRegRole('student')}
                   className={`p-3 rounded-xl border text-left transition-all ${
                     regRole === 'student'
-                      ? 'bg-violet-600/20 border-violet-500 text-slate-100 shadow-sm'
-                      : 'bg-slate-900/40 border-slate-700/60 text-slate-400 hover:border-slate-600'
-                  }`}>
-                  <div className="flex items-center gap-2 font-bold text-xs">
-                    <BookOpen size={14} className={regRole === 'student' ? 'text-violet-400' : ''} />
+                      ? 'bg-blue-600/15 border-blue-500/60 text-blue-200 shadow-sm shadow-blue-500/10'
+                      : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-bold text-xs text-slate-200">
+                    <BookOpen size={14} className={regRole === 'student' ? 'text-blue-400' : 'text-slate-400'} />
                     Студент
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1">Писать эссе и рецензировать</div>
+                  <div className="text-[11px] text-slate-400 mt-1">Писать эссе и проверять</div>
                 </button>
-                <button type="button" onClick={() => setRegRole('teacher')}
+                <button
+                  type="button"
+                  onClick={() => setRegRole('teacher')}
                   className={`p-3 rounded-xl border text-left transition-all ${
                     regRole === 'teacher'
-                      ? 'bg-violet-600/20 border-violet-500 text-slate-100 shadow-sm'
-                      : 'bg-slate-900/40 border-slate-700/60 text-slate-400 hover:border-slate-600'
-                  }`}>
-                  <div className="flex items-center gap-2 font-bold text-xs">
-                    <GraduationCap size={14} className={regRole === 'teacher' ? 'text-violet-400' : ''} />
-                    Преподаватель
+                      ? 'bg-blue-600/15 border-blue-500/60 text-blue-200 shadow-sm shadow-blue-500/10'
+                      : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-bold text-xs text-slate-200">
+                    <GraduationCap size={14} className={regRole === 'teacher' ? 'text-blue-400' : 'text-slate-400'} />
+                    Учитель
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1">Создавать задания</div>
+                  <div className="text-[11px] text-slate-400 mt-1">Классы и журнал</div>
                 </button>
               </div>
             </div>
 
             {error && (
-              <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
-                {error}
+              <div className="px-3.5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs flex items-start gap-2">
+                <span>{error}</span>
               </div>
             )}
 
-            <button type="submit" disabled={loading}
-              className="btn-primary w-full justify-center py-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed">
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <>Зарегистрироваться <ArrowRight size={14} /></>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full justify-center py-2.5 text-sm"
+            >
+              {loading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <>Зарегистрироваться <ArrowRight size={15} /></>
+              )}
             </button>
 
-            <p className="text-center text-xs text-slate-500">
+            <p className="text-center text-xs text-slate-400">
               Уже есть аккаунт?{' '}
-              <button onClick={() => { setMode('login'); setError(''); }}
-                className="text-violet-400 hover:text-violet-300 font-semibold">
+              <button
+                type="button"
+                onClick={() => { setMode('login'); setError(''); }}
+                className="text-blue-400 hover:text-blue-300 font-semibold underline underline-offset-2"
+              >
                 Войти
               </button>
             </p>
@@ -305,12 +321,12 @@ const LoginPage: React.FC = () => {
         {mode === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <h2 className="text-base font-bold text-slate-100 mb-0.5">Добро пожаловать!</h2>
-              <p className="text-xs text-slate-400">Введи имя и пароль как при регистрации</p>
+              <h2 className="text-base font-bold text-slate-100 mb-0.5">Вход в систему</h2>
+              <p className="text-xs text-slate-400">Введите имя и пароль указанные при регистрации</p>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                 Имя и фамилия
               </label>
               <input
@@ -325,7 +341,7 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                 Пароль
               </label>
               <div className="relative">
@@ -337,39 +353,53 @@ const LoginPage: React.FC = () => {
                   placeholder="••••••••"
                   className="input-field text-sm pr-10"
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1"
+                >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <div className="px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
+              <div className="px-3.5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 text-xs">
                 {error}
               </div>
             )}
 
-            <button type="submit" disabled={loading}
-              className="btn-primary w-full justify-center py-3 text-sm disabled:opacity-60 disabled:cursor-not-allowed">
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <>Войти <ArrowRight size={14} /></>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full justify-center py-2.5 text-sm"
+            >
+              {loading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <>Войти в кабинет <ArrowRight size={15} /></>
+              )}
             </button>
 
-            <p className="text-center text-xs text-slate-500">
-              Нет аккаунта?{' '}
-              <button onClick={() => { setMode('register'); setError(''); }}
-                className="text-violet-400 hover:text-violet-300 font-semibold">
-                Зарегистрируйся
+            <p className="text-center text-xs text-slate-400">
+              Еще нет аккаунта?{' '}
+              <button
+                type="button"
+                onClick={() => { setMode('register'); setError(''); }}
+                className="text-blue-400 hover:text-blue-300 font-semibold underline underline-offset-2"
+              >
+                Создать аккаунт
               </button>
             </p>
           </form>
         )}
       </div>
 
-      {/* Hint */}
-      <p className="mt-6 text-xs text-slate-600 text-center max-w-sm">
-        💡 Запомни своё имя и пароль — они нужны для входа
-      </p>
+      {/* Security Footer Notice */}
+      <div className="mt-6 flex items-center gap-1.5 text-xs text-slate-500 relative z-10">
+        <ShieldCheck size={14} className="text-blue-400/80" />
+        <span>Защищенный экзаменационный симулятор IELTS</span>
+      </div>
     </div>
   );
 };

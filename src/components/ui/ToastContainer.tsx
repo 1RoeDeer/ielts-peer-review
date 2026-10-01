@@ -26,7 +26,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onClose }) => {
         return <AlertTriangle size={18} className="text-amber-500" />;
       case 'info':
       default:
-        return <Sparkles size={18} className="text-violet-400" />;
+        return <Sparkles size={18} className="text-blue-400" />;
     }
   };
 
@@ -40,7 +40,7 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onClose }) => {
         return 'rgba(245, 158, 11, 0.4)';
       case 'info':
       default:
-        return 'rgba(139, 92, 246, 0.4)';
+        return 'rgba(59, 130, 246, 0.4)';
     }
   };
 

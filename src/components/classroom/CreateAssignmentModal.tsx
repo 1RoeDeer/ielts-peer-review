@@ -66,7 +66,7 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
                 <button key={t.value} onClick={() => setEssayType(t.value)}
                   className={`px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left ${
                     essayType === t.value
-                      ? 'bg-violet-900/50 border-violet-600/60 text-violet-300'
+                      ? 'bg-blue-900/40 border-blue-500/60 text-blue-200 shadow-sm shadow-blue-500/10'
                       : 'bg-slate-800/40 border-slate-700/40 text-slate-500 hover:border-slate-600'
                   }`}>
                   {t.label}

@@ -77,7 +77,7 @@ export const CriteriaPanel: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              <Layers size={15} className="text-violet-400" />
+              <Layers size={15} className="text-blue-400" />
               Критерии оценки IELTS
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
@@ -89,7 +89,7 @@ export const CriteriaPanel: React.FC = () => {
             <button
               onClick={selectAll}
               className={`px-2 py-1 rounded text-[11px] font-semibold transition-all ${
-                !isModular ? 'bg-violet-600 text-white' : 'btn-ghost'
+                !isModular ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20' : 'btn-ghost'
               }`}
             >
               Все 4
@@ -98,7 +98,7 @@ export const CriteriaPanel: React.FC = () => {
               onClick={() => selectOnly('grammar')}
               className={`px-2 py-1 rounded text-[11px] font-semibold transition-all ${
                 isModular && selectedCriteria.length === 1 && selectedCriteria[0] === 'grammar'
-                  ? 'bg-violet-600 text-white'
+                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
                   : 'btn-ghost'
               }`}
             >
@@ -120,12 +120,12 @@ export const CriteriaPanel: React.FC = () => {
                 onClick={() => toggleCriterion(c.key)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border ${
                   isSelected
-                    ? 'bg-violet-600/20 text-violet-200 border-violet-500/40 shadow-sm'
+                    ? 'bg-blue-600/20 text-blue-200 border-blue-500/40 shadow-sm shadow-blue-500/10'
                     : 'bg-slate-900/40 text-slate-400 border-slate-700/40 opacity-70 hover:opacity-100'
                 }`}
                 title={evaluator ? `Уже оценено: ${evaluator.userName} (Band ${evaluator.band})` : 'Нажмите, чтобы включить/исключить критерий'}
               >
-                {isSelected ? <CheckSquare size={12} className="text-violet-400" /> : <Square size={12} />}
+                {isSelected ? <CheckSquare size={12} className="text-blue-400" /> : <Square size={12} />}
                 <span>{c.short}</span>
                 {evaluator && (
                   <span className="w-1.5 h-1.5 rounded-full bg-green-400" title={`Оценено: ${evaluator.userName}`} />

@@ -69,20 +69,16 @@ const Sidebar: React.FC = () => {
         style={{ borderBottom: '1px solid var(--border)' }}
       >
         <div
-          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{
-            background: 'var(--accent)',
-            boxShadow: 'var(--shadow)',
-          }}
+          className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 text-white shadow-md shadow-blue-500/25 ring-1 ring-white/20"
         >
-          <GraduationCap size={15} style={{ color: 'var(--text-inverse)' }} />
+          <GraduationCap size={16} />
         </div>
         {sidebarOpen && (
           <div className="overflow-hidden min-w-0">
-            <div className="text-sm font-bold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+            <div className="text-sm font-bold whitespace-nowrap gradient-text-sapphire">
               IELTS Peer Review
             </div>
-            <div className="text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+            <div className="text-xs whitespace-nowrap text-slate-400">
               Writing Platform
             </div>
           </div>
@@ -133,12 +129,7 @@ const Sidebar: React.FC = () => {
         {currentUser && (
           <div className={`flex items-center gap-2.5 p-2 rounded-lg ${sidebarOpen ? '' : 'justify-center'}`}>
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-              style={{
-                background: 'var(--accent)',
-                color: 'var(--text-inverse)',
-                boxShadow: 'var(--shadow-sm)',
-              }}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm shadow-blue-500/20 ring-1 ring-white/10"
             >
               {currentUser.avatar}
             </div>

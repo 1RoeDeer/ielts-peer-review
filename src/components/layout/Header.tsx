@@ -92,12 +92,7 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
         {/* User avatar + name */}
         <div className="flex items-center gap-2">
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-            style={{
-              background: 'var(--accent)',
-              color: 'var(--text-inverse)',
-              boxShadow: 'var(--shadow-sm)',
-            }}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm shadow-blue-500/20 ring-1 ring-white/10"
           >
             {currentUser?.avatar}
           </div>

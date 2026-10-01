@@ -236,14 +236,14 @@ const DashboardPage: React.FC = () => {
               <div className="space-y-3">
                 <button
                   onClick={() => navigate('/reviews')}
-                  className="w-full flex items-center justify-between p-3 rounded-xl border border-violet-500/30 bg-violet-950/20 hover:bg-violet-950/40 text-left transition-all group"
+                  className="w-full flex items-center justify-between p-3 rounded-xl border border-blue-500/30 bg-blue-950/20 hover:bg-blue-950/40 text-left transition-all group shadow-sm hover:border-blue-500/50"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-lg bg-violet-600/20 text-violet-300">
+                    <div className="p-2 rounded-lg bg-blue-600/20 text-blue-300 border border-blue-500/20">
                       <Users size={16} />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-slate-100 group-hover:text-white">
+                      <div className="text-xs font-bold text-slate-100 group-hover:text-blue-300 transition-colors">
                         Каталог учеников для оценки
                       </div>
                       <div className="text-[11px] text-slate-400">
@@ -251,7 +251,7 @@ const DashboardPage: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <ArrowRight size={14} className="text-violet-400 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight size={14} className="text-blue-400 group-hover:translate-x-0.5 transition-transform" />
                 </button>
 
                 {reviewQueue.length === 0 ? (

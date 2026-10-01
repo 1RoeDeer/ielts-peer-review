@@ -10,7 +10,7 @@ export const NotFoundPage: React.FC = () => {
     <AppShell title="Страница не найдена">
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center animate-fade-in">
         <div className="glass-card max-w-md p-8 sm:p-10 space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-violet-600/15 border border-violet-500/30 text-violet-400 flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-blue-600/15 border border-blue-500/30 text-blue-400 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/10">
             <Compass size={32} />
           </div>
 

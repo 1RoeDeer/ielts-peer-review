@@ -173,7 +173,7 @@ const AssignmentPage: React.FC = () => {
             {classroom ? classroom.name : 'Панель управления'}
           </button>
 
-          <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-violet-600/15 text-violet-300 border border-violet-500/25">
+          <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-600/15 text-blue-300 border border-blue-500/30">
             {essayTypeLabel[assignment.essayType] || assignment.essayType}
           </span>
         </div>
@@ -181,7 +181,7 @@ const AssignmentPage: React.FC = () => {
         {/* Assignment Prompt Card */}
         <div className="glass-card p-6 space-y-4">
           <div>
-            <div className="text-xs font-bold text-violet-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <div className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
               <FileText size={13} />
               Экзаменационное задание
             </div>

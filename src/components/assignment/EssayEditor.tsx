@@ -271,9 +271,9 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
         <button
           type="button"
           onClick={onOpenExamSimulator}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-violet-600/20 text-violet-300 hover:bg-violet-600/30 border border-violet-500/30 transition-all self-start sm:self-auto"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-blue-600/15 text-blue-300 hover:bg-blue-600/25 border border-blue-500/30 transition-all self-start sm:self-auto shadow-sm shadow-blue-500/10"
         >
-          <Clock size={14} className="text-violet-400" />
+          <Clock size={14} className="text-blue-400" />
           Симулятор ({assignment.essayType === 'task1' ? '20м' : '40м'})
         </button>
       </div>
@@ -282,7 +282,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
       <div className="flex items-center justify-between flex-wrap gap-2 px-3 py-2 rounded-xl bg-slate-900/70 border border-slate-800 text-xs">
         <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
           <div className="flex items-center gap-1.5 text-slate-300 font-mono">
-            <Clock size={13} className="text-violet-400" />
+            <Clock size={13} className="text-blue-400" />
             <span>Время: <strong className="text-white">{formatTime(secondsSpent)}</strong></span>
           </div>
 
@@ -319,7 +319,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
           maxLength={MAX_ESSAY_CHARS}
           rows={12}
           placeholder="Начните писать ваше эссе здесь... (Вставка текста заблокирована — пишите самостоятельно)"
-          className="w-full rounded-xl p-3 sm:p-4 bg-slate-900/60 border border-slate-700/60 text-slate-100 placeholder-slate-500 font-serif text-sm sm:text-base leading-relaxed focus:outline-none focus:border-violet-500 transition-all resize-y select-text"
+          className="w-full rounded-xl p-3 sm:p-4 bg-slate-900/60 border border-slate-700/60 text-slate-100 placeholder-slate-500 font-serif text-sm sm:text-base leading-relaxed focus:outline-none focus:border-blue-500 transition-all resize-y select-text"
           /* ──── Security attributes ──── */
           autoComplete="off"
           autoCorrect="off"
@@ -332,7 +332,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
 
         {/* Security badge overlay */}
         <div className="absolute bottom-3 right-3 hidden sm:flex items-center gap-1.5 pointer-events-none text-[11px] text-slate-400 bg-slate-900/90 px-2.5 py-1 rounded-md border border-slate-700/60">
-          <ShieldAlert size={12} className="text-violet-400" />
+          <ShieldAlert size={12} className="text-blue-400" />
           <span>Анти-копипаст активен</span>
         </div>
       </div>
@@ -342,7 +342,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
         <div className="rounded-xl p-3 bg-slate-900/60 border border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 flex-wrap gap-1">
             <span className="flex items-center gap-1.5 text-slate-200">
-              <AlignLeft size={13} className="text-violet-400" />
+              <AlignLeft size={13} className="text-blue-400" />
               Структура эссе по абзацам ({rawParagraphs.length} {rawParagraphs.length === 4 ? 'из 4 — отлично!' : 'абз.'}):
             </span>
             <span className="text-[10px] text-slate-400 flex items-center gap-1">

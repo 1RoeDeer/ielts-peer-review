@@ -105,7 +105,7 @@ export const TeacherSubmissionsView: React.FC<TeacherSubmissionsViewProps> = ({
             className="btn-secondary self-start sm:self-auto flex items-center gap-1.5 text-xs py-2 px-3.5"
             title="Скачать оценки и статистику в формате Excel / CSV"
           >
-            <Download size={13} className="text-violet-400" />
+            <Download size={13} className="text-blue-400" />
             Скачать ведомость (Excel / CSV)
           </button>
         )}
@@ -138,7 +138,7 @@ export const TeacherSubmissionsView: React.FC<TeacherSubmissionsViewProps> = ({
                 {/* Author & Honesty Info */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs bg-violet-600/30 text-violet-200 border border-violet-500/30 flex-shrink-0">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs bg-blue-600/25 text-blue-200 border border-blue-500/30 flex-shrink-0">
                       {author?.avatar || 'ST'}
                     </div>
                     <div>
@@ -148,7 +148,7 @@ export const TeacherSubmissionsView: React.FC<TeacherSubmissionsViewProps> = ({
                         <span>·</span>
                         <span>{essay.submittedAt ? new Date(essay.submittedAt).toLocaleDateString() : '—'}</span>
                         {essay.isExamMode && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-violet-900/40 text-violet-300 border border-violet-700/30">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-900/40 text-blue-300 border border-blue-700/30">
                             ⏱️ Симуляция экзамена
                           </span>
                         )}
@@ -160,7 +160,7 @@ export const TeacherSubmissionsView: React.FC<TeacherSubmissionsViewProps> = ({
                   <div className="flex items-center gap-2 flex-wrap pt-1">
                     {essay.timeSpentSeconds !== undefined && essay.timeSpentSeconds > 0 && (
                       <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700/60 font-mono flex items-center gap-1">
-                        <Clock size={11} className="text-violet-400" />
+                        <Clock size={11} className="text-blue-400" />
                         {Math.floor(essay.timeSpentSeconds / 60)}м {essay.timeSpentSeconds % 60}с
                       </span>
                     )}
