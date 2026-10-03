@@ -103,8 +103,8 @@
 - **STATUS:** CONFIRMED ISSUE для алгоритмов; влияние конкретных IME/табличных приложений — POTENTIAL RISK.
 - **AREA:** Writing UX, annotation correctness, export safety.
 - **FILES:** `src/components/assignment/EssayEditor.tsx`, `src/components/assignment/TeacherSubmissionsView.tsx`, `src/components/review/EssayPanel.tsx`, `src/components/feedback/FeedbackViewer.tsx`, `src/components/assignment/ModelEssayPanel.tsx`.
-- **PROBLEM:** editor блокирует undo/redo/replacement и прирост длины, что не доказывает paste. Highlights допускают пересечения, но renderer повторно выводит перекрывающийся текст; offsets предполагают разделитель длиной два символа, а selection через абзацы не обрабатывается полноценно. CSV заключает name в кавычки без escaping вложенных кавычек и защиты от spreadsheet formulas.
-- **IMPACT:** легитимный ввод может отклоняться; комментарии привязываются к неверному фрагменту; экспорт может искажать ячейки или трактовать имя как формулу в принимающем приложении.
+- **PROBLEM:** В мобильной адаптации 2026-10-03 убраны блокировки undo/redo/replacement, эвристика прироста длины и запрет контекстного меню редактора; paste/drop по-прежнему блокируются. Реальные IME и клавиатуры iOS/Android требуют проверки на устройствах. Highlights допускают пересечения, но renderer повторно выводит перекрывающийся текст; offsets предполагают разделитель длиной два символа, а selection через абзацы не обрабатывается полноценно. CSV заключает name в кавычки без escaping вложенных кавычек и защиты от spreadsheet formulas.
+- **IMPACT:** совместимость мобильных клавиатур ещё не подтверждена на устройствах; комментарии привязываются к неверному фрагменту; экспорт может искажать ячейки или трактовать имя как формулу в принимающем приложении.
 - **RECOMMENDED FIX:** проверить доступность/IME и смягчить недостоверные anti-cheat assertions; единая модель spans/offsets с тестами пересечений и переносов; корректное CSV escaping и нейтрализация формул. Browser-only ограничения не представлять как защищённый экзамен.
 
 ## D12 — Продукт показывает смесь неполных, локальных и демонстрационных данных

@@ -280,7 +280,7 @@ const EssayPanel: React.FC<EssayPanelProps> = ({ essayText }) => {
 
         {comments.length === 0 && (
           <div
-            className="sticky bottom-4 left-1/2 -translate-x-1/2 max-w-sm mx-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs text-center pointer-events-none mt-8"
+            className="sticky bottom-4 max-w-sm mx-auto flex items-center justify-center gap-2 px-4 py-2 rounded-full text-xs text-center pointer-events-none mt-8"
             style={{
               background: 'var(--bg-card)',
               border: '1px solid var(--border)',

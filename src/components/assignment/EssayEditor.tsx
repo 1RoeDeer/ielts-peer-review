@@ -62,7 +62,6 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
   const [pasteAttempts, setPasteAttempts] = useState<number>(existingDraft?.pasteAttempts || 0);
   const [keystrokes, setKeystrokes] = useState<number>(existingDraft?.keystrokesCount || 0);
 
-  const prevTextRef = useRef<string>(essayText);
   const lastActiveTimestamp = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -71,16 +70,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
   const onPasteBlockedRef = useRef(onPasteBlocked);
   useEffect(() => { onPasteBlockedRef.current = onPasteBlocked; }, [onPasteBlocked]);
 
-  // Sync prevTextRef when essayText changes externally
-  useEffect(() => {
-    prevTextRef.current = essayText;
-  }, [essayText]);
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // NATIVE DOM LEVEL PROTECTION (runs at capture phase, BEFORE React)
-  // Catches: iOS contact autofill, Yank/kill-ring, spellcheck replacement,
-  //          "Insert from iPhone" / vCard paste, OS-level text injection.
-  // ─────────────────────────────────────────────────────────────────────────
+  // Block explicit paste/drop while allowing mobile suggestions, IME and undo.
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -90,10 +80,6 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
       'insertFromPasteAsQuotation',
       'insertFromYank',          // iOS kill-ring / yank buffer
       'insertFromDrop',
-      'insertReplacementText',   // spellcheck / autocorrect bulk replacement
-      'insertTranspose',
-      'historyUndo',             // undo could restore pasted content
-      'historyRedo',
     ]);
 
     // Block known paste-like input types at native beforeinput level
@@ -107,27 +93,10 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
       }
     };
 
-    // Fallback delta guard — catches contact autofill via keyboard suggestion
-    // bar, IME composition dumps, and anything that slips past beforeinput.
-    const onNativeInput = () => {
-      const current = el.value;
-      const prev = prevTextRef.current;
-      const delta = current.length - prev.length;
-
-      if (delta > 5) {
-        // Restore immediately at DOM level before React sees it
-        el.value = prev;
-        setPasteAttempts((p) => p + 1);
-        onPasteBlockedRef.current();
-      }
-    };
-
     el.addEventListener('beforeinput', onNativeBeforeInput, { capture: true, passive: false });
-    el.addEventListener('input',       onNativeInput,       { capture: true });
 
     return () => {
       el.removeEventListener('beforeinput', onNativeBeforeInput, { capture: true });
-      el.removeEventListener('input',       onNativeInput,       { capture: true });
     };
   }, []);
 
@@ -163,28 +132,9 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  /**
-   * 🛡️ IRONCLAD ANTI-PASTE PROTECTION
-   * 1. If length delta > 7 chars in a single event, it is 100% paste/insert -> REJECT.
-   */
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     markActive();
-    const nextVal = e.target.value.slice(0, MAX_ESSAY_CHARS);
-    const prevVal = prevTextRef.current;
-    const addedChars = nextVal.length - prevVal.length;
-
-    // Normal typing is 1 character (or 2-5 for mobile word auto-suggest).
-    // Anything > 7 chars inserted in ONE synchronous change event is a clipboard dump.
-    if (addedChars > 7) {
-      setPasteAttempts((p) => p + 1);
-      onPasteBlocked();
-      // Reject change by restoring previous value
-      onChangeText(prevVal);
-      return;
-    }
-
-    prevTextRef.current = nextVal;
-    onChangeText(nextVal);
+    onChangeText(e.target.value.slice(0, MAX_ESSAY_CHARS));
   };
 
   // Block native desktop paste event
@@ -199,19 +149,6 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
     e.preventDefault();
     setPasteAttempts((p) => p + 1);
     onPasteBlocked();
-  };
-
-  // Block mobile virtual keyboard paste / drag insertion via beforeinput
-  const handleBeforeInput = (e: React.FormEvent<HTMLTextAreaElement> & { inputType?: string }) => {
-    if (
-      e.inputType === 'insertFromPaste' ||
-      e.inputType === 'insertFromDrop' ||
-      e.inputType === 'insertReplacementText'
-    ) {
-      e.preventDefault();
-      setPasteAttempts((p) => p + 1);
-      onPasteBlocked();
-    }
   };
 
   // Block keyboard shortcuts: Ctrl+V, Cmd+V, Shift+Insert
@@ -234,12 +171,6 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
     if (!['Control', 'Shift', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) {
       setKeystrokes((k) => k + 1);
     }
-  };
-
-  // Block context menu (long press on mobile or right click on desktop)
-  const handleContextMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
-    e.preventDefault();
-    onPasteBlocked();
   };
 
   const handleFinalSubmit = () => {
@@ -266,7 +197,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
             )}
           </h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Набирайте текст вручную. По стандартам экзамена IELTS вставка из буфера обмена заблокирована.
+            Пишите самостоятельно. Вставка из буфера обмена отключена; подсказки клавиатуры и отмена ввода доступны.
           </p>
         </div>
 
@@ -301,7 +232,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
             </span>
           ) : (
             <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 flex items-center gap-1">
-              <CheckCircle2 size={11} /> 100% ручной ввод
+              <CheckCircle2 size={11} /> Самостоятельная практика
             </span>
           )}
         </div>
@@ -316,8 +247,6 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
           onPaste={handlePaste}
           onDrop={handleDrop}
           onKeyDown={handleKeyDown}
-          onContextMenu={handleContextMenu}
-          onBeforeInput={handleBeforeInput}
           maxLength={MAX_ESSAY_CHARS}
           rows={12}
           placeholder="Начните писать ваше эссе здесь... (Вставка текста заблокирована — пишите самостоятельно)"
@@ -325,7 +254,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
           /* ──── Security attributes ──── */
           autoComplete="off"
           autoCorrect="off"
-          autoCapitalize="none"
+          autoCapitalize="sentences"
           spellCheck={false}
           data-gramm="false"
           data-gramm_editor="false"
@@ -413,7 +342,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-700/30 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2.5 pt-3 border-t border-slate-700/30">
         <button
           type="button"
           onClick={onSaveDraft}

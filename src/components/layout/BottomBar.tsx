@@ -29,11 +29,12 @@ const BottomBar: React.FC = () => {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-stretch border-t backdrop-blur-2xl"
+      aria-label="Основная навигация"
+      className="md:hidden relative flex-shrink-0 flex items-stretch border-t backdrop-blur-2xl"
       style={{
-        background: 'rgba(11, 16, 29, 0.88)',
-        borderColor: 'rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 -4px 24px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+        background: 'var(--bg-card)',
+        borderColor: 'var(--border)',
+        boxShadow: 'var(--shadow-sm)',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
@@ -42,6 +43,7 @@ const BottomBar: React.FC = () => {
         return (
           <button
             key={item.path}
+            aria-current={active ? 'page' : undefined}
             onClick={() => navigate(item.path)}
             className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 px-1 transition-all"
             style={{

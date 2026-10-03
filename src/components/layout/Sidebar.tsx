@@ -3,7 +3,7 @@ import { useStore } from '../../store/useStore';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   BookOpen, Home, Users, FileText, Star, LogOut,
-  ChevronLeft, ChevronRight, GraduationCap, PenSquare,
+  ChevronLeft, ChevronRight, GraduationCap, PenSquare, X,
 } from 'lucide-react';
 import GamificationBar from '../ui/GamificationBar';
 
@@ -52,15 +52,16 @@ const Sidebar: React.FC = () => {
 
   return (
     <aside
+      id="main-sidebar"
       style={{
         background: 'var(--bg-card)',
         borderRight: '1px solid var(--border)',
         boxShadow: 'var(--shadow)',
       }}
-      className={`fixed md:relative inset-y-0 left-0 z-50 md:z-auto flex flex-col h-full transition-all duration-300 ${
+      className={`fixed md:relative inset-y-0 left-0 z-50 md:z-auto flex flex-col h-full w-64 max-w-[calc(100vw-2rem)] md:max-w-none flex-shrink-0 transition-all duration-300 safe-bottom ${
         sidebarOpen
           ? 'w-64 md:w-60 translate-x-0'
-          : '-translate-x-full md:translate-x-0 md:w-14'
+          : 'invisible md:visible -translate-x-full md:translate-x-0 md:w-14'
       }`}
     >
       {/* Logo */}
@@ -83,6 +84,9 @@ const Sidebar: React.FC = () => {
             </div>
           </div>
         )}
+        <button className="md:hidden btn-ghost ml-auto flex-shrink-0" aria-label="Закрыть меню" onClick={() => setSidebarOpen(false)}>
+          <X size={18} />
+        </button>
       </div>
 
       {/* Nav */}
@@ -159,7 +163,8 @@ const Sidebar: React.FC = () => {
       {/* Collapse toggle */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="absolute -right-3 top-8 w-6 h-6 rounded-full flex items-center justify-center transition-all z-10"
+        aria-label={sidebarOpen ? 'Свернуть меню' : 'Развернуть меню'}
+        className="absolute -right-3 top-8 w-6 h-6 rounded-full hidden md:flex items-center justify-center transition-all z-10"
         style={{
           background: 'var(--bg-card)',
           border: '1px solid var(--border-strong)',

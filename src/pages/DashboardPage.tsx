@@ -68,19 +68,19 @@ const DashboardPage: React.FC = () => {
 
   return (
     <AppShell title="Dashboard">
-      <div className="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
 
         {/* Welcome */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-black" style={{ color: 'var(--text-primary)' }}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-black break-words" style={{ color: 'var(--text-primary)' }}>
               Good {greeting}, {currentUser?.name.split(' ')[0]}
             </h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
               {isTeacher ? 'Manage your classes and track student progress.' : 'Continue your IELTS writing journey.'}
             </p>
           </div>
-          <button onClick={() => isTeacher ? setShowCreateModal(true) : setShowJoinModal(true)} className="btn-primary">
+          <button onClick={() => isTeacher ? setShowCreateModal(true) : setShowJoinModal(true)} className="btn-primary self-start flex-shrink-0">
             <Plus size={15} />
             {isTeacher ? 'New Classroom' : 'Join Class'}
           </button>

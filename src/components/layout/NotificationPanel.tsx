@@ -97,7 +97,7 @@ const NotifItem: React.FC<NotifItemProps> = ({ notif, onClose }) => {
       {/* Delete button */}
       <button
         onClick={(e) => { e.stopPropagation(); clearNotification(notif.id); }}
-        className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity btn-ghost"
+        className="absolute right-3 top-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity btn-ghost"
         style={{ padding: '3px' }}
         title="Dismiss"
       >
@@ -133,14 +133,14 @@ const NotificationPanel: React.FC = () => {
   // Close on outside click
   useEffect(() => {
     if (!notifPanelOpen) return;
-    const handleClick = (e: MouseEvent) => {
+    const handleClick = (e: PointerEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setNotifPanelOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [notifPanelOpen]);
+    document.addEventListener('pointerdown', handleClick);
+    return () => document.removeEventListener('pointerdown', handleClick);
+  }, [notifPanelOpen, setNotifPanelOpen]);
 
   return (
     <div className="relative" ref={panelRef}>
@@ -169,19 +169,19 @@ const NotificationPanel: React.FC = () => {
       {/* Panel dropdown */}
       {notifPanelOpen && (
         <div
-          className="absolute right-0 top-full mt-2 w-96 rounded-xl overflow-hidden animate-scale-in z-50"
+          className="notification-popover fixed left-3 right-3 top-16 md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-96 rounded-xl overflow-hidden animate-scale-in z-50"
           style={{
             background: 'var(--bg-card)',
             border: '1px solid var(--border-strong)',
             boxShadow: 'var(--shadow-xl)',
-            maxHeight: '560px',
+            maxHeight: 'min(560px, calc(100dvh - 100px))',
             display: 'flex',
             flexDirection: 'column',
           }}
         >
           {/* Header */}
           <div
-            className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+            className="flex flex-wrap gap-2 items-center justify-between px-4 py-3 flex-shrink-0"
             style={{ borderBottom: '1px solid var(--border)' }}
           >
             <div className="flex items-center gap-2">
@@ -212,7 +212,7 @@ const NotificationPanel: React.FC = () => {
                   Mark all read
                 </button>
               )}
-              <button onClick={() => setNotifPanelOpen(false)} className="btn-ghost" style={{ padding: '5px' }}>
+              <button aria-label="Закрыть уведомления" onClick={() => setNotifPanelOpen(false)} className="btn-ghost" style={{ padding: '5px' }}>
                 <X size={13} />
               </button>
             </div>

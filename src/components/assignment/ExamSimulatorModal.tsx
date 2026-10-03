@@ -26,6 +26,7 @@ export const ExamSimulatorModal: React.FC<ExamSimulatorModalProps> = ({
   const [timeLeft, setTimeLeft] = useState<number>(totalSeconds);
   const [isPaused, setIsPaused] = useState<boolean>(false);
   const [text, setText] = useState<string>(initialText);
+  const [mobileTab, setMobileTab] = useState<'prompt' | 'writing'>('writing');
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [tabSwitchWarnings, setTabSwitchWarnings] = useState<number>(0);
   const [lastWarningMsg, setLastWarningMsg] = useState<string | null>(null);
@@ -134,16 +135,15 @@ export const ExamSimulatorModal: React.FC<ExamSimulatorModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col animate-fade-in overflow-hidden select-none"
+      className="app-viewport safe-bottom fixed inset-0 z-[100] flex flex-col animate-fade-in overflow-hidden"
       style={{
         background: 'var(--bg)',
         color: 'var(--text-primary)',
       }}
-      onContextMenu={(e) => e.preventDefault()}
     >
       {/* Top Header: Exam Control Bar */}
       <header
-        className="h-16 px-6 flex items-center justify-between border-b flex-shrink-0"
+        className="px-3 py-2 sm:px-6 flex flex-wrap items-center justify-between gap-2 border-b flex-shrink-0"
         style={{
           background: 'var(--bg-card)',
           borderColor: 'var(--border)',
@@ -151,7 +151,7 @@ export const ExamSimulatorModal: React.FC<ExamSimulatorModalProps> = ({
         }}
       >
         {/* Left: Exam Info */}
-        <div className="flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-3 min-w-0">
           <div
             className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs"
             style={{
@@ -177,7 +177,7 @@ export const ExamSimulatorModal: React.FC<ExamSimulatorModalProps> = ({
         </div>
 
         {/* Center: Digital Countdown Timer */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
           <div
             className={`flex items-center gap-2.5 px-4 py-1.5 rounded-xl border font-mono transition-all duration-300 ${
               isFiveMinutesLeft ? 'animate-pulse' : ''
@@ -211,10 +211,10 @@ export const ExamSimulatorModal: React.FC<ExamSimulatorModalProps> = ({
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3 flex-wrap">
           {tabSwitchWarnings > 0 && (
             <span
-              className="text-xs px-2.5 py-1 rounded-full flex items-center gap-1 font-semibold"
+              className="hidden sm:flex text-xs px-2.5 py-1 rounded-full items-center gap-1 font-semibold"
               style={{
                 background: 'rgba(239,68,68,0.15)',
                 color: '#ef4444',
@@ -232,7 +232,7 @@ export const ExamSimulatorModal: React.FC<ExamSimulatorModalProps> = ({
             className="btn-ghost text-xs flex items-center gap-1.5 px-3 py-2 rounded-lg"
           >
             <Minimize2 size={14} />
-            Exit Exam Mode
+            <span className="sm:hidden">Выйти</span><span className="hidden sm:inline">Exit Exam Mode</span>
           </button>
 
           <button
@@ -247,7 +247,7 @@ export const ExamSimulatorModal: React.FC<ExamSimulatorModalProps> = ({
             className="btn-primary text-xs flex items-center gap-2 px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Send size={14} />
-            Submit Exam
+            <span className="sm:hidden">Сдать</span><span className="hidden sm:inline">Submit Exam</span>
           </button>
         </div>
       </header>
@@ -311,11 +311,20 @@ export const ExamSimulatorModal: React.FC<ExamSimulatorModalProps> = ({
         </div>
       )}
 
-      {/* Main Exam Canvas */}
-      <main className="flex-1 flex overflow-hidden">
+      <div className="md:hidden flex flex-shrink-0 border-b" style={{ borderColor: 'var(--border)' }}>
+        <button aria-pressed={mobileTab === 'prompt'} onClick={() => setMobileTab('prompt')} className={`flex-1 py-3 text-sm font-semibold ${mobileTab === 'prompt' ? 'text-blue-400 bg-blue-500/10' : ''}`}>
+          Задание
+        </button>
+        <button aria-pressed={mobileTab === 'writing'} onClick={() => setMobileTab('writing')} className={`flex-1 py-3 text-sm font-semibold ${mobileTab === 'writing' ? 'text-blue-400 bg-blue-500/10' : ''}`}>
+          Моё эссе
+        </button>
+      </div>
+
+      {/* Both panels stay mounted so switching tabs preserves the draft. */}
+      <main className="flex-1 min-h-0 flex overflow-hidden">
         {/* Left Side: Task Prompt Panel */}
         <aside
-          className="w-1/3 min-w-[340px] max-w-md border-r p-6 overflow-y-auto flex flex-col gap-5 flex-shrink-0"
+          className={`w-full md:w-1/3 md:min-w-[280px] md:max-w-md border-r p-4 sm:p-6 overflow-y-auto flex-col gap-5 flex-shrink-0 ${mobileTab === 'prompt' ? 'flex' : 'hidden md:flex'}`}
           style={{
             background: 'var(--bg-card-2)',
             borderColor: 'var(--border)',
@@ -376,9 +385,9 @@ export const ExamSimulatorModal: React.FC<ExamSimulatorModalProps> = ({
         </aside>
 
         {/* Right Side: Distraction-free Writing Paper */}
-        <section className="flex-1 flex flex-col p-8 overflow-y-auto" style={{ background: 'var(--bg)' }}>
+        <section className={`flex-1 min-w-0 flex-col p-4 sm:p-8 overflow-y-auto ${mobileTab === 'writing' ? 'flex' : 'hidden md:flex'}`} style={{ background: 'var(--bg)' }}>
           {/* Status Bar */}
-          <div className="flex items-center justify-between mb-4 pb-3 border-b" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex flex-wrap gap-2 items-center justify-between mb-4 pb-3 border-b" style={{ borderColor: 'var(--border)' }}>
             <div className="flex items-center gap-4 text-xs font-medium">
               <span className={`text-sm font-bold ${wordCount >= minWords ? 'text-green-400' : 'text-amber-400'}`}>
                 {wordCount} / {minWords} words
@@ -394,16 +403,16 @@ export const ExamSimulatorModal: React.FC<ExamSimulatorModalProps> = ({
               <span className="font-mono">
                 {charCount.toLocaleString()} / {MAX_ESSAY_CHARS.toLocaleString()} chars
               </span>
-              <span className="px-2 py-0.5 rounded bg-slate-800/60 border border-slate-700/50 text-[11px]">
+              <span className="hidden lg:inline px-2 py-0.5 rounded bg-slate-800/60 border border-slate-700/50 text-[11px]">
                 🛡️ Exam Lock: Paste Disabled
               </span>
             </div>
           </div>
 
           {/* Writing Textarea */}
-          <div className="flex-1 relative flex flex-col">
+          <div className="flex-1 min-h-48 relative flex flex-col">
             <textarea
-              autoFocus
+              aria-label="Текст экзаменационного эссе"
               value={text}
               onChange={(e) => setText(e.target.value.slice(0, MAX_ESSAY_CHARS))}
               onPaste={handlePaste}

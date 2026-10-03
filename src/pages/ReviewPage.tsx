@@ -87,26 +87,26 @@ const ReviewPage: React.FC = () => {
   const selectedCriteria = activeReview?.reviewedCriteria || ['taskResponse', 'coherence', 'lexicalResource', 'grammar'];
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--bg)' }}>
+    <div className="app-viewport safe-bottom flex flex-col overflow-hidden" style={{ background: 'var(--bg)' }}>
       {/* Top Header Bar */}
       <div
-        className="h-14 flex items-center justify-between px-4 flex-shrink-0 border-b"
+        className="h-14 flex items-center justify-between gap-2 px-2 sm:px-4 flex-shrink-0 border-b"
         style={{
           background: 'var(--bg-card)',
           borderColor: 'var(--border)',
           boxShadow: 'var(--shadow-sm)',
         }}
       >
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="btn-ghost text-xs flex items-center gap-1.5 py-1.5 px-2.5">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <button onClick={() => navigate(-1)} className="btn-ghost text-xs flex-shrink-0 flex items-center gap-1.5 py-1.5 px-2.5">
             <ArrowLeft size={13} /> Назад
           </button>
 
           <div className="w-px h-5 bg-slate-700/50 hidden sm:block" />
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 min-w-0">
             <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+              className="w-7 h-7 rounded-lg hidden sm:flex items-center justify-center flex-shrink-0"
               style={{ background: 'var(--accent)', boxShadow: 'var(--shadow-sm)' }}
             >
               <GraduationCap size={13} style={{ color: 'var(--text-inverse)' }} />
@@ -118,13 +118,13 @@ const ReviewPage: React.FC = () => {
               <div className="text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
                 <span>{classroom?.name}</span>
                 <span>·</span>
-                <span className="text-blue-300 font-medium">Автор: {author?.name || 'Ученик'}</span>
+                <span className="text-blue-300 font-medium truncate">Автор: {author?.name || 'Ученик'}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {/* Desktop Layout Switcher */}
           <div className="hidden lg:flex items-center rounded-lg bg-slate-900/80 p-0.5 border border-slate-700/60 text-xs">
             <button
@@ -164,6 +164,7 @@ const ReviewPage: React.FC = () => {
       {/* Mobile Tab Switcher (Visible on screens < 768px) */}
       <div className="md:hidden flex items-center border-b border-slate-800 bg-slate-900/90 flex-shrink-0">
         <button
+          aria-pressed={mobileTab === 'essay'}
           onClick={() => setMobileTab('essay')}
           className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-all border-b-2 ${
             mobileTab === 'essay'
@@ -176,6 +177,7 @@ const ReviewPage: React.FC = () => {
         </button>
 
         <button
+          aria-pressed={mobileTab === 'criteria'}
           onClick={() => setMobileTab('criteria')}
           className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-1.5 transition-all border-b-2 ${
             mobileTab === 'criteria'
@@ -189,7 +191,7 @@ const ReviewPage: React.FC = () => {
       </div>
 
       {/* Main Content: Responsive Split / Tab Layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left: Essay Text Panel */}
         <div
           className={`flex flex-col overflow-hidden w-full ${
