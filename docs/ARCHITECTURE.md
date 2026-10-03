@@ -127,7 +127,7 @@ CURRENT: AI SDK, model calls, embeddings, RAG, evals, token accounting и рас
 
 CURRENT: Supabase Auth/Data API; Google Fonts через CSS import и preconnect в `index.html`. Нет Supabase Storage calls, файловых uploads, email-уведомлений приложения, webhooks или Realtime subscriptions. CSV генерируется в браузере через Blob в TeacherSubmissionsView, не загружается в storage.
 
-Live сайт доступен на `https://ielts-peer-review.vercel.app`; прямое открытие `/assignments/:id` до нового deployment возвращало Vercel 404. Корневой `vercel.json` добавляет SPA rewrite на `/index.html`. Vercel project и GitHub источник подтверждены списком deployments; этот checkout/коммит ещё не опубликован, preview и новый production deployment не проверены.
+Live сайт доступен на `https://ielts-peer-review.vercel.app`; прямое открытие `/assignments/:id` до обновления возвращало Vercel 404. Корневой `vercel.json` добавляет SPA rewrite на `/index.html`. Frontend опубликован 2026-10-03 через GitHub PR #1; Vercel preview и production получили READY. В браузере проверены вход существующих аккаунтов, страница задания после reload и возврат на вход для anon.
 
 # Payments
 
@@ -202,9 +202,9 @@ RECOMMENDED проверки для будущих изменений:
 - Источники команд: `package.json`; сборка `tsc -b && vite build`; результат — статическая SPA в `dist/`.
 - Зависимости фиксирует `package-lock.json`. Собственного Node pin/engines в package.json нет; сверяйте engines lockfile. На дату аудита их совместимый нижний порог — Node 22.12, локальные проверки выполнялись на Node 24.
 - Конфигурация: `vite.config.ts`, `tsconfig.app.json`, `tsconfig.node.json`, `postcss.config.js`, `tailwind.config.js`, `.oxlintrc.json`. Runtime config endpoint нет; VITE-настройки задаются до сборки.
-- `.env.example`, Docker/IaC, migrations runner и CI/CD workflow отсутствуют. Для новой БД — `supabase_schema.sql`, для существующей — две последовательные migrations после сравнения live схемы; нельзя считать наличие SQL подтверждением rollout. `vercel.json` задаёт SPA rewrite.
+- `.env.example`, Docker/IaC, migrations runner и CI/CD workflow отсутствуют. Для новой БД — `supabase_schema.sql`, для существующей — три последовательные migrations после сравнения live схемы; нельзя считать наличие SQL подтверждением rollout. `vercel.json` задаёт SPA rewrite.
 - `deploy.bat` делает git add -A, commit, force-push в main и сообщает про Vercel; `fix_email.bat` меняет global git config, amend и force-push. Это опасные вспомогательные скрипты, не проверенный безопасный release pipeline.
-- KNOWN: live Supabase schema/grants/policies сверены и обновлены; Vercel проект `ielts-peer-review` связан с GitHub `1RoeDeer/ielts-peer-review`, но локальная ветка ещё не опубликована. UNKNOWN: email confirmation, deployment нового rewrite, TLS/headers, backups и rollback. Существующий production URL доступен, но прямой BrowserRouter link до обновления возвращал 404.
+- KNOWN: live Supabase schema/grants/policies сверены и обновлены; Vercel проект `ielts-peer-review` связан с GitHub `1RoeDeer/ielts-peer-review`, preview и production deployment от 2026-10-03 получили READY, а защищённый BrowserRouter deep link открывается после reload. UNKNOWN: email confirmation, TLS/headers, backups, rollback и реальная межклассовая изоляция через JWT/Data API.
 
 # Observability
 

@@ -2,7 +2,7 @@
 
 Аудит исходников 2026-10-01, live RLS сверена и обновлена 2026-10-03. CONFIRMED ISSUE — доказуемый дефект кода/декларации; POTENTIAL RISK — механизм риска есть, влияние в эксплуатации не проверено; IMPROVEMENT IDEA — предложение без доказанной поломки. Severity и тип доказательства независимы. Пользовательские инциденты и полная production E2E-проверка UNKNOWN.
 
-После аудита внесено исправление D01 в исходники и 2026-10-03 применено к live Supabase. Клиентский коммит ещё не опубликован на Vercel. При закрытии пункта проверяйте актуальный исходник и обновляйте связанные предупреждения в AGENTS/ARCHITECTURE/PRODUCT.
+После аудита внесено исправление D01 в исходники и 2026-10-03 применено к live Supabase. Клиентская версия опубликована на Vercel 2026-10-03. При закрытии пункта проверяйте актуальный исходник и обновляйте связанные предупреждения в AGENTS/ARCHITECTURE/PRODUCT.
 
 # Critical
 
@@ -14,13 +14,13 @@
 - **WAS:** чтение всех классов и широкая запись assignments/essays/reviews; join по UUID без кода; роль из metadata; отсутствие object guards и закрытой пустой очереди.
 - **FIX:** права по auth.uid/владельцу/членству, явные table/column grants, private helpers без RLS recursion, join-by-code RPC. Черновики доступны только автору-участнику; reviews guard защищает чужие критерии, комментарии, contributors и teacher fields, пересчитывает peer Band. Самостоятельная роль остаётся UI preference и не участвует в серверной авторизации. Профиль берётся из БД; cache не восстанавливает пользователя/учебные данные, session load имеет generation guard; чужие deep links закрыты.
 - **LIVE EVIDENCE:** до миграции policies `auth.role() = authenticated` открывали classes/assignments/essays/reviews всем вошедшим, а grants давали широкие записи. Схема семи таблиц, дополнительные views/functions, grants, владельцы и связанные записи сверены; live миграции `classroom_rls`, `review_status`, `profile_trigger_acl` применены. После них `anon` не имеет table SELECT/private schema/RPC, а оба существующих ученика вошли и увидели свой класс. Security Advisor больше не показывает public trigger warning; join RPC по коду намеренно остаётся доступен вошедшим.
-- **REMAINING:** проверить реальные JWT/Data API двух *разных* классов, блокировки UPDATE и запись → reload → второй аккаунт после публикации frontend. Историческое авторство ранее доступных для подмены записей требует проверки; migration не восстанавливает его. D04/D07 остаются частично открытыми.
+- **REMAINING:** проверить реальные JWT/Data API двух *разных* классов, блокировки UPDATE и запись → reload → второй аккаунт. Историческое авторство ранее доступных для подмены записей требует проверки; migration не восстанавливает его. D04/D07 остаются частично открытыми.
 
 # High
 
 ## D02 — Повторное сохранение нового черновика теряет серверную идентичность
 
-- **STATUS:** FIXED IN SOURCE; live save/reload остаётся непроверенным.
+- **STATUS:** FIXED AND DEPLOYED; live save/reload остаётся непроверенным.
 - **AREA:** Writing persistence.
 - **FILES:** `src/store/useStore.ts`, `src/lib/db.ts`, `supabase_schema.sql`, `src/pages/AssignmentPage.tsx`.
 - **FIX:** операции по одной паре assignment/author выполняются последовательно; store сохраняет возвращённый UUID и показывает успех только после ответа БД. db helper ищет уже созданную строку и обрабатывает конфликт уникальности при гонке. `client_persistence.cjs` проверяет два save, submit, reload и отказ записи.
@@ -28,7 +28,7 @@
 
 ## D03 — Учительские оценки и статусы рецензированных эссе не сохраняются в БД
 
-- **STATUS:** status migration применена в live; frontend сохранения учительской оценки ещё не опубликован. Проверка двух live sessions остаётся.
+- **STATUS:** status migration и frontend сохранения учительской оценки опубликованы в live. Проверка двух live sessions остаётся.
 - **AREA:** Grading, workflow state.
 - **FILES:** `src/store/useStore.ts`, `src/lib/db.ts`, `src/components/teacher/TeacherGradeEditModal.tsx`.
 - **FIX:** учительская форма сохраняет review в Supabase до закрытия и показывает ошибку при отказе. `202610030001_review_status.sql` обновляет essay.status после сохранения partial/full/teacher review и исправляет статусы записей с существующими рецензиями. SQL-регрессия проверяет `reviewing`/`reviewed`; клиентская — сохранение/ошибку teacher grade.
