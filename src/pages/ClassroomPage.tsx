@@ -20,7 +20,8 @@ const ClassroomPage: React.FC = () => {
   const [studentSearch, setStudentSearch] = useState('');
 
   const classroom = classrooms.find((c) => c.id === classroomId);
-  if (!classroom) return (
+  if (!classroom || !currentUser ||
+    (classroom.teacherId !== currentUser.id && !classroom.studentIds.includes(currentUser.id))) return (
     <AppShell>
       <div className="p-8 text-slate-500">Classroom not found.</div>
     </AppShell>

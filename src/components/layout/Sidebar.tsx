@@ -8,7 +8,7 @@ import {
 import GamificationBar from '../ui/GamificationBar';
 
 const Sidebar: React.FC = () => {
-  const { currentUser, setCurrentUser, sidebarOpen, setSidebarOpen, classrooms } = useStore();
+  const { currentUser, logout, sidebarOpen, setSidebarOpen, classrooms } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -144,7 +144,7 @@ const Sidebar: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={() => { setCurrentUser(null); navigate('/'); }}
+                  onClick={async () => { await logout(); navigate('/'); }}
                   className="btn-ghost p-1.5"
                   title="Sign out"
                 >

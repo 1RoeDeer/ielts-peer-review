@@ -55,12 +55,6 @@ const LoginPage: React.FC = () => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate('/dashboard');
-    });
-  }, [navigate]);
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim()) { setError('Введи своё имя.'); return; }

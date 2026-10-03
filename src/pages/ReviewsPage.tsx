@@ -35,7 +35,7 @@ const ReviewsPage: React.FC = () => {
   const peerEssays = essays.filter((e) => {
     if (e.authorId === currentUser?.id) return false;
     if (e.status === 'draft') return false;
-    if (myAssignmentIds.length && !myAssignmentIds.includes(e.assignmentId)) return false;
+    if (!myAssignmentIds.includes(e.assignmentId)) return false;
     return true;
   });
 
