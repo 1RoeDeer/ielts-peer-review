@@ -1,19 +1,20 @@
 # Technical Debt
 
-Аудит исходников 2026-10-01. CONFIRMED ISSUE — доказуемый дефект кода/декларации; POTENTIAL RISK — механизм риска есть, влияние в эксплуатации не проверено; IMPROVEMENT IDEA — предложение без доказанной поломки. Severity и тип доказательства независимы. Состояние production, live policies/grants и пользовательские инциденты UNKNOWN.
+Аудит исходников 2026-10-01, live RLS сверена и обновлена 2026-10-03. CONFIRMED ISSUE — доказуемый дефект кода/декларации; POTENTIAL RISK — механизм риска есть, влияние в эксплуатации не проверено; IMPROVEMENT IDEA — предложение без доказанной поломки. Severity и тип доказательства независимы. Пользовательские инциденты и полная production E2E-проверка UNKNOWN.
 
-После аудита внесено исправление D01 в исходники; применение в live Supabase не подтверждено. При закрытии пункта проверяйте актуальный исходник и обновляйте связанные предупреждения в AGENTS/ARCHITECTURE/PRODUCT.
+После аудита внесено исправление D01 в исходники и 2026-10-03 применено к live Supabase. Клиентский коммит ещё не опубликован на Vercel. При закрытии пункта проверяйте актуальный исходник и обновляйте связанные предупреждения в AGENTS/ARCHITECTURE/PRODUCT.
 
 # Critical
 
 ## D01 — Нет надёжной изоляции классов и авторизации записей
 
-- **STATUS:** FIXED IN SOURCE; PostgreSQL allow/deny regression проходит в изолированном runtime. Live rollout и production impact UNKNOWN.
+- **STATUS:** RLS MIGRATION APPLIED IN LIVE 2026-10-03; PostgreSQL allow/deny regression проходит локально. Проверка двух разных классов с реальными JWT ещё нужна.
 - **AREA:** Authorization, privacy, integrity.
 - **FILES:** `supabase_schema.sql`, `supabase/migrations/202610010001_classroom_rls.sql`, `supabase/tests/`, `src/App.tsx`, `src/lib/db.ts`, store, classroom/review components и связанные pages.
 - **WAS:** чтение всех классов и широкая запись assignments/essays/reviews; join по UUID без кода; роль из metadata; отсутствие object guards и закрытой пустой очереди.
 - **FIX:** права по auth.uid/владельцу/членству, явные table/column grants, private helpers без RLS recursion, join-by-code RPC. Черновики доступны только автору-участнику; reviews guard защищает чужие критерии, комментарии, contributors и teacher fields, пересчитывает peer Band. Самостоятельная роль остаётся UI preference и не участвует в серверной авторизации. Профиль берётся из БД; cache не восстанавливает пользователя/учебные данные, session load имеет generation guard; чужие deep links закрыты.
-- **REMAINING:** сверить и применить migrations в live Supabase, проверить реальные JWT/Data API, дополнительные views/functions/grants и доверенных владельцев helper functions. Историческое авторство ранее доступных для подмены записей требует проверки; migration не восстанавливает его. Проверки и rollout: `supabase/tests/README.md`. D04/D07 остаются частично открытыми.
+- **LIVE EVIDENCE:** до миграции policies `auth.role() = authenticated` открывали classes/assignments/essays/reviews всем вошедшим, а grants давали широкие записи. Схема семи таблиц, дополнительные views/functions, grants, владельцы и связанные записи сверены; live миграции `classroom_rls`, `review_status`, `profile_trigger_acl` применены. После них `anon` не имеет table SELECT/private schema/RPC, а оба существующих ученика вошли и увидели свой класс. Security Advisor больше не показывает public trigger warning; join RPC по коду намеренно остаётся доступен вошедшим.
+- **REMAINING:** проверить реальные JWT/Data API двух *разных* классов, блокировки UPDATE и запись → reload → второй аккаунт после публикации frontend. Историческое авторство ранее доступных для подмены записей требует проверки; migration не восстанавливает его. D04/D07 остаются частично открытыми.
 
 # High
 
@@ -27,7 +28,7 @@
 
 ## D03 — Учительские оценки и статусы рецензированных эссе не сохраняются в БД
 
-- **STATUS:** FIXED IN SOURCE; применение status migration и проверка двух live sessions остаются.
+- **STATUS:** status migration применена в live; frontend сохранения учительской оценки ещё не опубликован. Проверка двух live sessions остаётся.
 - **AREA:** Grading, workflow state.
 - **FILES:** `src/store/useStore.ts`, `src/lib/db.ts`, `src/components/teacher/TeacherGradeEditModal.tsx`.
 - **FIX:** учительская форма сохраняет review в Supabase до закрытия и показывает ошибку при отказе. `202610030001_review_status.sql` обновляет essay.status после сохранения partial/full/teacher review и исправляет статусы записей с существующими рецензиями. SQL-регрессия проверяет `reviewing`/`reviewed`; клиентская — сохранение/ошибку teacher grade.

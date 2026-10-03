@@ -2,7 +2,7 @@
 
 IELTS Peer Review — клиентское приложение для групповой практики IELTS Writing. Архитектура: React SPA → Supabase Auth/Data API → PostgreSQL. Отдельных backend-приложения, API routes, worker, middleware, ORM и LLM-интеграции в репозитории нет.
 
-Эта карта описывает исходники, проверенные 2026-10-01. CURRENT — существует в коде; PARTIAL — цепочка неполна; RECOMMENDED — предложение; UNKNOWN — нет подтверждения. Фактические облачная схема, grants, auth-настройки и deployment не исследованы. Реестр существенных проблем: [TECH_DEBT.md](TECH_DEBT.md).
+Эта карта описывает исходники, проверенные 2026-10-01 и уточнённые после live RLS rollout 2026-10-03. CURRENT — существует в коде; PARTIAL — цепочка неполна; RECOMMENDED — предложение; UNKNOWN — нет подтверждения. Облачные schema/grants/RLS сверены; Auth-настройки и публикация нового frontend ещё не подтверждены. Реестр существенных проблем: [TECH_DEBT.md](TECH_DEBT.md).
 
 # Architecture Diagram
 
@@ -80,7 +80,7 @@ RECOMMENDED: атомарное согласование конкурирующ�
 
 # Database
 
-Текущая декларация новой схемы: `supabase_schema.sql`; frontend-модель: `src/types/index.ts`; преобразования: `src/lib/db.ts`. Для существующей БД есть последовательные `supabase/migrations/202610010001_classroom_rls.sql` и `202610030001_review_status.sql`; migration runner и generated DB types отсутствуют. `create table if not exists` не обновляет существующие таблицы: перед live rollout требуется сравнение схемы, grants и policies.
+Текущая декларация новой схемы: `supabase_schema.sql`; frontend-модель: `src/types/index.ts`; преобразования: `src/lib/db.ts`. Для существующей БД есть последовательные `supabase/migrations/202610010001_classroom_rls.sql`, `202610030001_review_status.sql` и `202610030002_profile_trigger_acl.sql`; migration runner и generated DB types отсутствуют. `create table if not exists` не обновляет существующие таблицы: перед live rollout требуется сравнение схемы, grants и policies.
 
 | Table | Responsibility / relationships |
 | --- | --- |
@@ -109,7 +109,7 @@ Reviews доступны для отправленных эссе класса. 
 
 Notifications читает адресат с доступом к контексту; UPDATE разрешает только `read`. INSERT допускается владельцу в своём классе или рецензенту после сохранения review — автору работы/владельцу класса. Несогласованные ссылки, чужие адресаты и `all` запрещены. `anon` не имеет CRUD grants; protected RPC доступен только authenticated. Полная матрица и live rollout проверки: `supabase/tests/README.md`.
 
-Это подтверждённая проблема декларации прав, а не доказательство фактической эксплуатации production. Grants и применённые policies — UNKNOWN. Пользовательские metadata нельзя считать доверенным источником авторизации: это отдельно подтверждается [документацией Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
+Широкие live policies/grants были подтверждены до миграции. 2026-10-03 три миграции применены к проекту Supabase `bazsuolubwqulkeqvwlt`; postflight подтвердил 19 адресных policies, отсутствие table SELECT для `anon`, приватную схему без `anon` USAGE и доверенное владение helper functions. Два существующих ученика успешно вошли и увидели свой класс. Межклассовый тест с реальными JWT и публикация нового клиента ещё нужны. Пользовательские metadata нельзя считать доверенным источником авторизации: это отдельно подтверждается [документацией Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
 Нет реализованного восстановления пароля. Нормализация имён допускает коллизии; для имён, очищающихся в пустую строку, используется меняющийся timestamp. Возможность входа после регистрации зависит от email confirmation в Supabase; настройка UNKNOWN.
 
@@ -127,7 +127,7 @@ CURRENT: AI SDK, model calls, embeddings, RAG, evals, token accounting и рас
 
 CURRENT: Supabase Auth/Data API; Google Fonts через CSS import и preconnect в `index.html`. Нет Supabase Storage calls, файловых uploads, email-уведомлений приложения, webhooks или Realtime subscriptions. CSV генерируется в браузере через Blob в TeacherSubmissionsView, не загружается в storage.
 
-Live сайт доступен на `https://ielts-peer-review.vercel.app`; прямое открытие `/assignments/:id` до нового deployment возвращало Vercel 404. Корневой `vercel.json` добавляет SPA rewrite на `/index.html`. Связь checkout с Vercel project, preview и production deployment исходников остаются непроверенными.
+Live сайт доступен на `https://ielts-peer-review.vercel.app`; прямое открытие `/assignments/:id` до нового deployment возвращало Vercel 404. Корневой `vercel.json` добавляет SPA rewrite на `/index.html`. Vercel project и GitHub источник подтверждены списком deployments; этот checkout/коммит ещё не опубликован, preview и новый production deployment не проверены.
 
 # Payments
 
@@ -171,7 +171,7 @@ Auth-формы показывают ошибки SDK. CRUD helpers обычно
 
 # Security
 
-- D01 исправлен в исходниках; live schema/grants/policies остаются UNKNOWN до rollout и проверки. UI guard не security boundary.
+- D01 применён в live Supabase 2026-10-03; межклассовый JWT/Data API тест ещё не проведён. UI guard не security boundary.
 - Пароли передаются Supabase Auth, в доменных таблицах/store пароль не хранится. Пользовательский текст рендерится JSX; dangerouslySetInnerHTML/eval в прикладном коде не обнаружены. Это не полноценный security audit всех зависимостей.
 - `.env` исключён Git; live read-only anon probe загружал его в памяти без вывода значений. VITE-переменные попадают в клиентскую сборку; допустим публичный Supabase anon key, но не service-role/LLM/payment secrets. Механизм описан в [Vite env docs](https://vite.dev/guide/env-and-mode).
 - Учебные данные/пользователь больше не сохраняются в Zustand localStorage. Очистка прежнего cache и поведение Auth session на общих устройствах требуют live browser проверки.
@@ -204,7 +204,7 @@ RECOMMENDED проверки для будущих изменений:
 - Конфигурация: `vite.config.ts`, `tsconfig.app.json`, `tsconfig.node.json`, `postcss.config.js`, `tailwind.config.js`, `.oxlintrc.json`. Runtime config endpoint нет; VITE-настройки задаются до сборки.
 - `.env.example`, Docker/IaC, migrations runner и CI/CD workflow отсутствуют. Для новой БД — `supabase_schema.sql`, для существующей — две последовательные migrations после сравнения live схемы; нельзя считать наличие SQL подтверждением rollout. `vercel.json` задаёт SPA rewrite.
 - `deploy.bat` делает git add -A, commit, force-push в main и сообщает про Vercel; `fix_email.bat` меняет global git config, amend и force-push. Это опасные вспомогательные скрипты, не проверенный безопасный release pipeline.
-- UNKNOWN: фактические Supabase schema/grants, email confirmation, Vercel project linkage, deployment нового rewrite, TLS/headers, backups и rollback. Существующий production URL доступен, но прямой BrowserRouter link до обновления возвращал 404.
+- KNOWN: live Supabase schema/grants/policies сверены и обновлены; Vercel проект `ielts-peer-review` связан с GitHub `1RoeDeer/ielts-peer-review`, но локальная ветка ещё не опубликована. UNKNOWN: email confirmation, deployment нового rewrite, TLS/headers, backups и rollback. Существующий production URL доступен, но прямой BrowserRouter link до обновления возвращал 404.
 
 # Observability
 

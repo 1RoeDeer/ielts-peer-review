@@ -14,7 +14,7 @@
 
 `classroom_rls.sql` проверяет allow/deny от `authenticated` и `anon` в PostgreSQL с Supabase Auth schema. Нужны права `postgres` для создания тестовых Auth users и `SET ROLE`. Сценарий заканчивается `ROLLBACK`; при первой ошибке проверка должна остановиться. Используйте отдельный тестовый проект/БД, не production.
 
-Для новой БД сначала примените `supabase_schema.sql`. Для существующей БД сначала сравните её схему с репозиторием и примените по порядку `supabase/migrations/202610010001_classroom_rls.sql` и `supabase/migrations/202610030001_review_status.sql`. Migration runner в проекте отсутствует. Пример запуска теста при наличии PostgreSQL CLI:
+Для новой БД сначала примените `supabase_schema.sql`. Для существующей БД сначала сравните её схему с репозиторием и примените по порядку `supabase/migrations/202610010001_classroom_rls.sql`, `202610030001_review_status.sql` и `202610030002_profile_trigger_acl.sql`. Migration runner в проекте отсутствует. Пример запуска теста при наличии PostgreSQL CLI:
 
 ```powershell
 psql --set ON_ERROR_STOP=1 --file supabase/tests/classroom_rls.sql
@@ -26,7 +26,7 @@ psql --set ON_ERROR_STOP=1 --file supabase/tests/classroom_rls.sql
 
 Локально сценарий выполнен на PGlite (PostgreSQL runtime вне зависимостей проекта), со stub `auth.users`/`auth.uid()` и реальными PostgreSQL grants/RLS/triggers. Проверены новая схема, upgrade исходной схемы и повторное применение миграции. Это не проверяет Supabase Auth/JWT, PostgREST или облачную конфигурацию.
 
-Перед live rollout:
+Перед повторным rollout или дальнейшими изменениями в live:
 
 1. Сверьте таблицы/колонки, `pg_policies`, table/column grants, views, functions, владельцев SECURITY DEFINER functions и exposed schemas. `private` не должна быть exposed; функции должны принадлежать доверенной роли, обходящей RLS. Миграция заменяет все policies на семи перечисленных таблицах, поэтому сначала проверьте дополнительные live policies.
 2. Проверьте существующие `teacher_id`, memberships, `author_id`, `reviewer_id` и JSON-авторство. Миграция не восстанавливает происхождение ранее скомпрометированных записей. Старые `recipient_id='all'` скрываются. Черновики доступны только автору, пока он состоит в классе; владельцу класса доступны отправленные работы. До обновления клиента сохраните необходимые тексты/оценки, существующие только в старом localStorage: persist migration удаляет прежний общий cache, а D02/D03 означают, что не все его данные попали в БД.

@@ -2,6 +2,13 @@
 -- Fixtures and assertion helpers are rolled back; any failed assertion aborts the test.
 begin;
 
+do $$ begin
+  if has_function_privilege('anon', 'public.handle_new_user()', 'EXECUTE') or
+    has_function_privilege('authenticated', 'public.handle_new_user()', 'EXECUTE') then
+    raise exception 'Profile trigger must not be callable through Data API';
+  end if;
+end $$;
+
 create function pg_temp.assert_count(statement text, expected bigint) returns void
 language plpgsql as $$ declare actual bigint; begin
   execute 'select count(*) from (' || statement || ') q' into actual;
