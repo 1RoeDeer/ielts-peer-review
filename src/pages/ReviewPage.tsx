@@ -29,10 +29,12 @@ const ReviewPage: React.FC = () => {
   const assignment = assignments.find((a) => a.id === essay?.assignmentId);
   const classroom = classrooms.find((c) => c.id === assignment?.classroomId);
   const author = users.find((u) => u.id === essay?.authorId);
+  const canReview = !!currentUser && !!classroom && essay?.status !== 'draft' &&
+    (classroom.teacherId === currentUser.id ||
+      (classroom.studentIds.includes(currentUser.id) && essay?.authorId !== currentUser.id));
 
   useEffect(() => {
-    if (!essay || !currentUser) return;
-    if (essay.authorId === currentUser.id) return; // Not allowed
+    if (!essay || !currentUser || !canReview) return;
 
     // Look for existing review on this essay (either by currentUser or by a classmate to complement)
     const existingUserReview = reviews.find(
@@ -45,9 +47,9 @@ const ReviewPage: React.FC = () => {
     } else if (!activeReview || activeReview.essayId !== essay.id) {
       setActiveReview(initReviewForEssay(essay.id, currentUser.id, existingAnyReview));
     }
-  }, [essay?.id, currentUser?.id]);
+  }, [essay, currentUser, canReview, reviews, activeReview, setActiveReview]);
 
-  if (!essay || !assignment) {
+  if (!essay || !assignment || !canReview) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
         <div className="glass-card max-w-sm p-8 text-center space-y-3">

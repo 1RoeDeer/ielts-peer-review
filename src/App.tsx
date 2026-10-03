@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from './store/useStore';
 import { supabase } from './lib/supabase';
@@ -23,14 +23,14 @@ import AssignmentsPage from './pages/AssignmentsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useStore();
+  const { currentUser, authReady } = useStore();
+  if (!authReady) return <div role="status">Загрузка…</div>;
   if (!currentUser) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
 /** Load all shared data from Supabase and populate the Zustand store */
-async function loadAllData(userId: string) {
-  const set = useStore.getState;
+async function loadAllData(userId: string, isCurrent: () => boolean) {
   const [profiles, classrooms, assignments, essays, reviews, notifications] = await Promise.all([
     fetchAllProfiles(),
     fetchAllClassrooms(),
@@ -39,7 +39,12 @@ async function loadAllData(userId: string) {
     fetchAllReviews(),
     fetchNotificationsForUser(userId),
   ]);
+  if (!isCurrent()) return;
+  const profile = profiles.find((p) => p.id === userId);
+  if (!profile) throw new Error('Не удалось загрузить профиль. Повторите загрузку страницы.');
   useStore.setState({
+    currentUser: profile,
+    authReady: true,
     users: profiles,
     classrooms,
     assignments,
@@ -47,11 +52,11 @@ async function loadAllData(userId: string) {
     reviews,
     notifications,
   });
-  void set; // suppress unused warning
 }
 
 function App() {
-  const { currentUser, setCurrentUser, theme } = useStore();
+  const { currentUser, authReady, theme } = useStore();
+  const [authError, setAuthError] = useState('');
 
   // Apply saved theme on mount
   useEffect(() => {
@@ -60,28 +65,33 @@ function App() {
 
   // Listen to Supabase auth state changes
   useEffect(() => {
+    let generation = 0;
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
+        if (session?.user.id === useStore.getState().currentUser?.id &&
+          (_event === 'TOKEN_REFRESHED' || _event === 'SIGNED_IN')) return;
+        const requestGeneration = ++generation;
+        setAuthError('');
+        useStore.setState({ currentUser: null, authReady: !session?.user, users: [],
+          classrooms: [], assignments: [], essays: [], reviews: [], notifications: [],
+          activeReview: null, toasts: [], xp: 0, streak: 0, badges: [],
+          reviewerRank: 'novice', lastActivityDate: null });
         if (session?.user) {
-          const u = session.user;
-          const meta = u.user_metadata ?? {};
-          const profile = {
-            id: u.id,
-            name: (meta.name as string) || u.email?.split('@')[0] || 'User',
-            email: u.email ?? '',
-            avatar: (meta.avatar as string) || 'US',
-            role: ((meta.role as string) || 'student') as 'teacher' | 'student',
-          };
-          setCurrentUser(profile);
-          await loadAllData(u.id);
-        } else {
-          // Signed out
-          setCurrentUser(null);
+          // Run SDK queries after the auth callback releases its session lock.
+          setTimeout(() => {
+            if (generation !== requestGeneration) return;
+            void loadAllData(session.user.id, () => generation === requestGeneration).catch((error: Error) => {
+              if (generation === requestGeneration) setAuthError(error.message);
+            });
+          }, 0);
         }
       }
     );
-    return () => subscription.unsubscribe();
-  }, [setCurrentUser]);
+    return () => { ++generation; subscription.unsubscribe(); };
+  }, []);
+
+  if (authError) return <div role="alert">{authError} <button onClick={() => window.location.reload()}>Повторить</button></div>;
+  if (!authReady) return <div role="status">Загрузка…</div>;
 
   return (
     <BrowserRouter>

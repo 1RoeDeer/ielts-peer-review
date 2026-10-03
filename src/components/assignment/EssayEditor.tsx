@@ -18,6 +18,7 @@ interface EssayEditorProps {
   onChangeText: (text: string) => void;
   onSubmit: (metrics?: SubmissionMetrics) => void;
   onSaveDraft: () => void;
+  isSaving?: boolean;
   onOpenExamSimulator: () => void;
   existingDraft?: Essay | null;
   onPasteBlocked: () => void;
@@ -33,6 +34,7 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
   onChangeText,
   onSubmit,
   onSaveDraft,
+  isSaving = false,
   onOpenExamSimulator,
   existingDraft,
   onPasteBlocked,
@@ -415,17 +417,17 @@ export const EssayEditor: React.FC<EssayEditorProps> = ({
         <button
           type="button"
           onClick={onSaveDraft}
-          disabled={!essayText.trim()}
+          disabled={!essayText.trim() || isSaving}
           className="btn-secondary flex-1 sm:flex-initial flex items-center justify-center gap-2 text-xs py-2.5 px-4"
         >
           <Save size={14} />
-          Сохранить черновик
+          {isSaving ? 'Сохранение…' : 'Сохранить черновик'}
         </button>
 
         <button
           type="button"
           onClick={handleFinalSubmit}
-          disabled={!isMinMet || charCount > MAX_ESSAY_CHARS || isTooFast}
+          disabled={!isMinMet || charCount > MAX_ESSAY_CHARS || isTooFast || isSaving}
           className="btn-primary flex-1 sm:flex-initial flex items-center justify-center gap-2 text-xs py-2.5 px-5 disabled:opacity-50 disabled:cursor-not-allowed"
           title={isTooFast ? `Минимальное время написания: 2 мин` : undefined}
         >

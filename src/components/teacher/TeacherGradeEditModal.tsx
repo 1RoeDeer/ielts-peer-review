@@ -65,6 +65,7 @@ const TeacherGradeEditModal: React.FC<TeacherGradeEditModalProps> = ({
   const [generalVerdict, setGeneralVerdict] = useState<string>(review?.generalVerdict ?? '');
   const [teacherFeedback, setTeacherFeedback] = useState<string>(review?.teacherFeedback ?? '');
   const [showEssayPreview, setShowEssayPreview] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Computed overall band
   const computedOverallBand = calculateOverallBand([trBand, ccBand, lrBand, graBand]);
@@ -99,7 +100,8 @@ const TeacherGradeEditModal: React.FC<TeacherGradeEditModalProps> = ({
     setManualOverrideBand(review.originalBand ?? review.overallBand);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (isSaving) return;
     const criteriaPayload = {
       taskResponse: {
         band: trBand,
@@ -139,23 +141,25 @@ const TeacherGradeEditModal: React.FC<TeacherGradeEditModalProps> = ({
       },
     };
 
-    if (review) {
-      updateReviewByTeacher(review.id, {
+    setIsSaving(true);
+    try {
+    const saved = review
+      ? await updateReviewByTeacher(review.id, {
+        criteria: criteriaPayload,
+        overallBand: effectiveBand,
+        generalVerdict,
+        teacherFeedback: teacherFeedback.trim() || undefined,
+      })
+      : await createTeacherReview(essay.id, {
         criteria: criteriaPayload,
         overallBand: effectiveBand,
         generalVerdict,
         teacherFeedback: teacherFeedback.trim() || undefined,
       });
-    } else {
-      createTeacherReview(essay.id, {
-        criteria: criteriaPayload,
-        overallBand: effectiveBand,
-        generalVerdict,
-        teacherFeedback: teacherFeedback.trim() || undefined,
-      });
+    if (saved) onClose();
+    } finally {
+      setIsSaving(false);
     }
-
-    onClose();
   };
 
   const getScoreColor = (score: number) => {
@@ -445,10 +449,11 @@ const TeacherGradeEditModal: React.FC<TeacherGradeEditModalProps> = ({
             <button
               type="button"
               onClick={handleSave}
+              disabled={isSaving}
               className="btn-primary text-xs flex items-center gap-2 px-5 py-2.5 shadow-lg"
             >
               <Save size={14} />
-              Сохранить и опубликовать оценку
+              {isSaving ? 'Сохранение…' : 'Сохранить и опубликовать оценку'}
             </button>
           </div>
         </div>

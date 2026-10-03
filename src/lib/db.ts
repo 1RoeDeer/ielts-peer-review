@@ -77,15 +77,17 @@ export async function insertClassroom(
   return data?.id ?? null;
 }
 
-export async function insertClassroomStudent(
-  classroomId: string,
-  studentId: string
-): Promise<boolean> {
-  const { error } = await supabase
-    .from('classroom_students')
-    .insert({ classroom_id: classroomId, student_id: studentId });
-  if (error) { console.error('insertClassroomStudent:', error); return false; }
-  return true;
+export async function joinClassroomByCode(code: string): Promise<
+  { success: true; classroomId: string } |
+  { success: false; reason: 'not_found' | 'already_joined' | 'teacher_owner' | 'server_error' }
+> {
+  const { data, error } = await supabase.rpc('join_classroom_by_code', { join_code: code });
+  if (error) {
+    const reason = error.message === 'already_joined' || error.message === 'teacher_owner'
+      ? error.message : error.code === 'P0002' ? 'not_found' : 'server_error';
+    return { success: false, reason };
+  }
+  return { success: true, classroomId: data as string };
 }
 
 // ─── ASSIGNMENTS ──────────────────────────────────────────────
@@ -159,12 +161,25 @@ export async function upsertEssay(essay: Essay): Promise<string | null> {
   // Try update first if id looks like a real UUID
   const isRealId = essay.id && !essay.id.startsWith('essay-');
   if (isRealId) {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('essays')
-      .update(row)
-      .eq('id', essay.id);
-    if (!error) return essay.id;
+      .update({ content: row.content, word_count: row.word_count, status: row.status,
+        submitted_at: row.submitted_at, is_exam_mode: row.is_exam_mode, time_spent_seconds: row.time_spent_seconds })
+      .eq('id', essay.id)
+      .select('id').single();
+    if (error) { console.error('upsertEssay:', error); return null; }
+    return data.id;
   }
+
+  // A previous save may have reached Supabase before its UUID reached this client.
+  const { data: existing, error: lookupError } = await supabase
+    .from('essays')
+    .select('id')
+    .eq('assignment_id', essay.assignmentId)
+    .eq('author_id', essay.authorId)
+    .maybeSingle();
+  if (lookupError) { console.error('upsertEssay lookup:', lookupError); return null; }
+  if (existing?.id) return upsertEssay({ ...essay, id: existing.id });
 
   // Insert new
   const { data, error } = await supabase
@@ -172,6 +187,11 @@ export async function upsertEssay(essay: Essay): Promise<string | null> {
     .insert(row)
     .select('id')
     .single();
+  if (error?.code === '23505') {
+    const { data: concurrent, error: retryError } = await supabase.from('essays').select('id')
+      .eq('assignment_id', essay.assignmentId).eq('author_id', essay.authorId).maybeSingle();
+    if (!retryError && concurrent?.id) return upsertEssay({ ...essay, id: concurrent.id });
+  }
   if (error) { console.error('upsertEssay:', error); return null; }
   return data?.id ?? null;
 }
@@ -227,11 +247,14 @@ export async function upsertReview(review: Review): Promise<string | null> {
 
   const isRealId = review.id && !review.id.startsWith('review-');
   if (isRealId) {
-    const { error } = await supabase
+    const { essay_id: _essayId, reviewer_id: _reviewerId, ...updates } = row;
+    const { data, error } = await supabase
       .from('reviews')
-      .update(row)
-      .eq('id', review.id);
-    if (!error) return review.id;
+      .update(updates)
+      .eq('id', review.id)
+      .select('id').single();
+    if (error) { console.error('upsertReview:', error); return null; }
+    return data.id;
   }
 
   const { data, error } = await supabase
@@ -249,7 +272,7 @@ export async function fetchNotificationsForUser(userId: string): Promise<Notific
   const { data, error } = await supabase
     .from('notifications')
     .select('*')
-    .or(`recipient_id.eq.${userId},recipient_id.eq.all`)
+    .eq('recipient_id', userId)
     .order('created_at', { ascending: false })
     .limit(50);
   if (error) { console.error('fetchNotifications:', error); return []; }
@@ -291,5 +314,5 @@ export async function markAllNotificationsReadDb(userId: string): Promise<void> 
   await supabase
     .from('notifications')
     .update({ read: true })
-    .or(`recipient_id.eq.${userId},recipient_id.eq.all`);
+    .eq('recipient_id', userId);
 }

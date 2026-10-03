@@ -27,10 +27,12 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
   const [deadline, setDeadline] = useState('');
   const [minWords, setMinWords] = useState(250);
   const [requiredReviews, setRequiredReviews] = useState(2);
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleCreate = () => {
-    if (!title.trim() || !prompt.trim() || !deadline) return;
-    createAssignment({
+  const handleCreate = async () => {
+    if (!title.trim() || !prompt.trim() || !deadline || isCreating) return;
+    setIsCreating(true);
+    try { const saved = await createAssignment({
       classroomId,
       title: title.trim(),
       prompt: prompt.trim(),
@@ -39,7 +41,8 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
       minWords,
       requiredReviews,
     });
-    onClose();
+    if (saved) onClose();
+    } finally { setIsCreating(false); }
   };
 
   const isValid = title.trim() && prompt.trim() && deadline;
@@ -115,9 +118,9 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
 
         <div className="flex gap-3 p-5 border-t border-slate-700/40 flex-shrink-0">
           <button onClick={onClose} className="btn-secondary flex-1">Cancel</button>
-          <button onClick={handleCreate} disabled={!isValid}
+          <button onClick={handleCreate} disabled={!isValid || isCreating}
             className="btn-primary flex-1 disabled:opacity-40 disabled:cursor-not-allowed">
-            Publish Assignment
+            {isCreating ? 'Publishing…' : 'Publish Assignment'}
           </button>
         </div>
       </div>

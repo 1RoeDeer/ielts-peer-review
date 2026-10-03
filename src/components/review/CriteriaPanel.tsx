@@ -1,5 +1,5 @@
-import React from 'react';
-import { useStore } from '../../store/useStore';
+import React, { useState } from 'react';
+import { useStore, canEditReviewCriterion } from '../../store/useStore';
 import CriteriaSection from './CriteriaSection';
 import CharCounter from '../ui/CharCounter';
 import { Target, Link2, BookOpen, Zap, Send, Layers, CheckSquare, Square, UserCheck } from 'lucide-react';
@@ -30,15 +30,20 @@ const CRITERIA_CONFIG: { key: CriterionKey; label: string; short: string; icon: 
 ];
 
 export const CriteriaPanel: React.FC = () => {
-  const { activeReview, updateGeneralVerdict, submitReview, setReviewedCriteria } = useStore();
+  const { currentUser, activeReview, updateGeneralVerdict, submitReview, setReviewedCriteria } = useStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   if (!activeReview) return null;
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try { await submitReview(); } finally { setIsSubmitting(false); }
+  };
 
   const { overallBand, generalVerdict, criteria, criteriaEvaluators } = activeReview;
   const bandColor = getBandColor(overallBand);
 
-  const selectedCriteria = (activeReview.reviewedCriteria && activeReview.reviewedCriteria.length > 0)
-    ? activeReview.reviewedCriteria
-    : (['taskResponse', 'coherence', 'lexicalResource', 'grammar'] as CriterionKey[]);
+  const selectedCriteria = activeReview.reviewedCriteria ?? [];
 
   const isModular = selectedCriteria.length < 4;
 
@@ -63,7 +68,7 @@ export const CriteriaPanel: React.FC = () => {
 
   // Only the selected criteria must have feedback filled
   const selectedFilled = selectedCriteria.every((k) => criteria[k].feedback.trim().length > 0);
-  const canSubmit = selectedFilled && (isModular ? true : generalVerdict.trim().length > 0);
+  const canSubmit = selectedCriteria.length > 0 && selectedFilled && (isModular ? true : generalVerdict.trim().length > 0);
 
   const iconStyle = { color: 'var(--text-secondary)' };
 
@@ -108,6 +113,7 @@ export const CriteriaPanel: React.FC = () => {
         </div>
 
         {/* Criteria selector pills */}
+        <p className="text-xs text-slate-400">Критерии других участников защищены. Их может исправить преподаватель класса.</p>
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
           {CRITERIA_CONFIG.map((c) => {
             const isSelected = selectedCriteria.includes(c.key);
@@ -117,6 +123,7 @@ export const CriteriaPanel: React.FC = () => {
               <button
                 key={c.key}
                 type="button"
+                disabled={!canEditReviewCriterion(activeReview, c.key, currentUser?.id || '')}
                 onClick={() => toggleCriterion(c.key)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border ${
                   isSelected
@@ -295,8 +302,8 @@ export const CriteriaPanel: React.FC = () => {
 
         {/* Submit */}
         <button
-          onClick={submitReview}
-          disabled={!canSubmit}
+          onClick={handleSubmit}
+          disabled={!canSubmit || isSubmitting}
           className="btn-primary w-full justify-center py-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send size={14} />

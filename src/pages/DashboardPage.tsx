@@ -27,6 +27,9 @@ const DashboardPage: React.FC = () => {
   const myAssignments = assignments.filter((a) => myClassrooms.some((c) => c.id === a.classroomId));
   const myEssays = essays.filter((e) => e.authorId === currentUser?.id);
   const myReviews = reviews.filter((r) => r.reviewerId === currentUser?.id);
+  const receivedReviews = reviews.filter((r) =>
+    r.isComplete && myEssays.some((e) => e.id === r.essayId)
+  );
   const allSubmissions = isTeacher
     ? essays.filter((e) => myAssignments.some((a) => a.id === e.assignmentId))
     : [];
@@ -49,7 +52,7 @@ const DashboardPage: React.FC = () => {
         { icon: BookOpen,      label: 'My Classes',        value: myClassrooms.length },
         { icon: PenSquare,     label: 'Essays Submitted',  value: myEssays.filter((e) => e.status !== 'draft').length },
         { icon: CheckCircle2,  label: 'Reviews Given',     value: myReviews.filter((r) => r.isComplete).length },
-        { icon: Star,          label: 'Avg Band Received', value: myReviews.length ? (myReviews.reduce((a, r) => a + r.overallBand, 0) / myReviews.length).toFixed(1) : '—' },
+        { icon: Star,          label: 'Avg Band Received', value: receivedReviews.length ? (receivedReviews.reduce((a, r) => a + r.overallBand, 0) / receivedReviews.length).toFixed(1) : '—' },
       ];
 
   const getDeadlineStatus = (deadline: string) => {

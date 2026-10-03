@@ -9,7 +9,8 @@ import {
 } from '../data/mockData';
 import { supabase } from '../lib/supabase';
 import {
-  insertClassroom, insertClassroomStudent, insertAssignment,
+  insertClassroom, joinClassroomByCode, fetchAllClassrooms, fetchAllProfiles, fetchAllAssignments,
+  fetchAllEssays, fetchAllReviews, fetchNotificationsForUser, insertAssignment,
   upsertEssay, upsertReview, insertNotification,
   markNotificationReadDb,
 } from '../lib/db';
@@ -44,6 +45,7 @@ interface AppState {
 
   // Auth & User Management
   currentUser: User | null;
+  authReady: boolean;
   setCurrentUser: (user: User | null) => void;
   addUser: (user: Omit<User, 'id'>) => User;
   logout: () => Promise<void>;
@@ -67,10 +69,10 @@ interface AppState {
     updates: Partial<{ band: number; feedback: string; checklistState: Record<string, boolean> }>
   ) => void;
   updateGeneralVerdict: (verdict: string) => void;
-  submitReview: () => void;
+  submitReview: () => Promise<boolean>;
 
   // Teacher grade editing actions
-  updateReviewByTeacher: (reviewId: string, updates: TeacherReviewUpdate) => void;
+  updateReviewByTeacher: (reviewId: string, updates: TeacherReviewUpdate) => Promise<boolean>;
   createTeacherReview: (
     essayId: string,
     reviewData: {
@@ -79,19 +81,19 @@ interface AppState {
       generalVerdict: string;
       teacherFeedback?: string;
     }
-  ) => void;
+  ) => Promise<boolean>;
   resetDatabase: () => void;
 
   // Classroom actions
-  createClassroom: (classroom: Omit<Classroom, 'id' | 'createdAt' | 'studentIds'>) => void;
-  joinClassroom: (code: string) => { success: boolean; reason?: 'not_found' | 'already_joined' | 'teacher_owner' };
+  createClassroom: (classroom: Omit<Classroom, 'id' | 'createdAt' | 'studentIds'>) => Promise<boolean>;
+  joinClassroom: (code: string) => Promise<{ success: boolean; reason?: 'not_found' | 'already_joined' | 'teacher_owner' | 'server_error' }>;
 
   // Assignment actions
-  createAssignment: (assignment: Omit<Assignment, 'id' | 'createdAt'>) => void;
+  createAssignment: (assignment: Omit<Assignment, 'id' | 'createdAt'>) => Promise<boolean>;
 
   // Essay actions
-  submitEssay: (essay: Omit<Essay, 'id' | 'submittedAt'>) => void;
-  saveDraft: (essay: Omit<Essay, 'id' | 'submittedAt'>) => void;
+  submitEssay: (essay: Omit<Essay, 'id' | 'submittedAt'>) => Promise<boolean>;
+  saveDraft: (essay: Omit<Essay, 'id' | 'submittedAt'>) => Promise<boolean>;
 
   // Notifications
   notifications: Notification[];
@@ -154,6 +156,56 @@ export function calculateOverallBand(bands: number[]): number {
   return floor + 1;
 }
 
+const essaySaveQueue = new Map<string, Promise<boolean>>();
+
+async function persistEssay(essay: Omit<Essay, 'id' | 'submittedAt'>, status: 'draft' | 'submitted'): Promise<boolean> {
+  const key = `${essay.assignmentId}:${essay.authorId}`;
+  const previous = essaySaveQueue.get(key);
+  const save = (async () => {
+    if (previous) await previous;
+    const state = useStore.getState();
+    if (state.currentUser?.id !== essay.authorId) return false;
+    const content = essay.content.slice(0, 3000);
+    const existing = state.essays.find((e) => e.assignmentId === essay.assignmentId && e.authorId === essay.authorId);
+    const savedEssay: Essay = {
+      ...essay,
+      id: existing?.id ?? `essay-${Date.now()}`,
+      content,
+      wordCount: content.trim().split(/\s+/).filter(Boolean).length,
+      status,
+      submittedAt: status === 'submitted' ? new Date().toISOString() : existing?.submittedAt,
+    };
+    const realId = await upsertEssay(savedEssay);
+    if (!realId) {
+      useStore.getState().addToast({ type: 'warning', title: 'Не удалось сохранить эссе', message: 'Проверьте соединение и попробуйте ещё раз.' });
+      return false;
+    }
+    useStore.setState((current) => {
+      if (current.currentUser?.id !== essay.authorId) return current;
+      const saved = { ...savedEssay, id: realId };
+      return {
+        essays: current.essays.some((e) => e.assignmentId === essay.assignmentId && e.authorId === essay.authorId)
+          ? current.essays.map((e) => e.assignmentId === essay.assignmentId && e.authorId === essay.authorId ? saved : e)
+          : [...current.essays, saved],
+        toasts: [...current.toasts, {
+          id: `toast-essay-${Date.now()}`,
+          type: status === 'draft' ? 'info' as const : 'success' as const,
+          title: status === 'draft' ? 'Черновик сохранён' : 'Эссе отправлено',
+          message: status === 'draft' ? `Сохранено ${saved.wordCount} слов.` : 'Работа доступна для рецензирования.',
+        }],
+      };
+    });
+    return true;
+  })().catch((error) => {
+    console.error('persistEssay:', error);
+    useStore.getState().addToast({ type: 'warning', title: 'Не удалось сохранить эссе', message: 'Проверьте соединение и попробуйте ещё раз.' });
+    return false;
+  });
+  essaySaveQueue.set(key, save);
+  void save.finally(() => { if (essaySaveQueue.get(key) === save) essaySaveQueue.delete(key); });
+  return save;
+}
+
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -165,6 +217,7 @@ export const useStore = create<AppState>()(
   }),
 
   currentUser: null,
+  authReady: false,
   setCurrentUser: (user) => set({ currentUser: user }),
   addUser: (userData) => {
     const newUser: User = {
@@ -179,24 +232,22 @@ export const useStore = create<AppState>()(
   },
 
   logout: async () => {
-    await supabase.auth.signOut();
-    set({
-      currentUser: null,
-      users: mockUsers,
-      classrooms: mockClassrooms,
-      assignments: mockAssignments,
-      essays: mockEssays,
-      reviews: mockReviews,
-      notifications: mockNotifications,
-    });
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      get().addToast({ type: 'warning', title: 'Не удалось выйти', message: 'Повторите выход из аккаунта.' });
+      return;
+    }
+    set({ currentUser: null, users: [], classrooms: [], assignments: [], essays: [], reviews: [],
+      notifications: [], activeReview: null, toasts: [], xp: 0, badges: [], streak: 0,
+      reviewerRank: 'novice', lastActivityDate: null });
   },
 
-  users: mockUsers,
-  classrooms: mockClassrooms,
-  assignments: mockAssignments,
-  essays: mockEssays,
-  reviews: mockReviews,
-  notifications: mockNotifications,
+  users: [],
+  classrooms: [],
+  assignments: [],
+  essays: [],
+  reviews: [],
+  notifications: [],
 
   toasts: [],
   addToast: (toast) =>
@@ -220,6 +271,7 @@ export const useStore = create<AppState>()(
   setReviewedCriteria: (criteria) =>
     set((state) => {
       if (!state.activeReview) return state;
+      criteria = criteria.filter((key) => canEditReviewCriterion(state.activeReview!, key, state.currentUser?.id || ''));
       const bands = criteria.map((k) => state.activeReview!.criteria[k].band);
       return {
         activeReview: {
@@ -236,8 +288,8 @@ export const useStore = create<AppState>()(
         ...comment,
         comment: comment.comment.slice(0, 3000),
         suggestion: comment.suggestion ? comment.suggestion.slice(0, 3000) : undefined,
-        authorId: comment.authorId || state.currentUser?.id,
-        authorName: comment.authorName || state.currentUser?.name,
+        authorId: state.currentUser?.id,
+        authorName: state.currentUser?.name,
       };
       return {
         activeReview: state.activeReview
@@ -248,6 +300,8 @@ export const useStore = create<AppState>()(
 
   updateInlineComment: (id, updates) =>
     set((state) => {
+      const comment = state.activeReview?.inlineComments.find((c) => c.id === id);
+      if (!comment || comment.authorId !== state.currentUser?.id) return state;
       const sanitizedUpdates = {
         ...updates,
         ...(updates.comment ? { comment: updates.comment.slice(0, 3000) } : {}),
@@ -258,7 +312,7 @@ export const useStore = create<AppState>()(
           ? {
               ...state.activeReview,
               inlineComments: state.activeReview.inlineComments.map((c) =>
-                c.id === id ? { ...c, ...sanitizedUpdates } : c
+                c.id === id ? { ...c, ...sanitizedUpdates, id: c.id, authorId: c.authorId, authorName: c.authorName } : c
               ),
             }
           : state.activeReview,
@@ -270,7 +324,7 @@ export const useStore = create<AppState>()(
       activeReview: state.activeReview
         ? {
             ...state.activeReview,
-            inlineComments: state.activeReview.inlineComments.filter((c) => c.id !== id),
+            inlineComments: state.activeReview.inlineComments.filter((c) => c.id !== id || c.authorId !== state.currentUser?.id),
           }
         : state.activeReview,
     })),
@@ -278,6 +332,7 @@ export const useStore = create<AppState>()(
   updateReviewCriteria: (criterion, updates) =>
     set((state) => {
       if (!state.activeReview) return state;
+      if (!canEditReviewCriterion(state.activeReview, criterion, state.currentUser?.id || '')) return state;
       const sanitizedUpdates = {
         ...updates,
         ...(updates.feedback ? { feedback: updates.feedback.slice(0, 3000) } : {}),
@@ -327,25 +382,20 @@ export const useStore = create<AppState>()(
         : state.activeReview,
     })),
 
-  submitReview: () =>
-    set((state) => {
-      if (!state.activeReview || !state.currentUser) return state;
+  submitReview: async () => {
+      const state = get();
+      if (!state.activeReview || !state.currentUser) return false;
       const active = state.activeReview;
 
       // Validation: student cannot review their own essay
       const essay = state.essays.find((e) => e.id === active.essayId);
-      if (essay && essay.authorId === state.currentUser.id) {
-        return {
-          toasts: [
-            ...state.toasts,
-            {
-              id: `toast-err-${Date.now()}`,
-              type: 'warning',
-              title: 'Недопустимое действие',
-              message: 'Вы не можете оценивать собственное эссе.',
-            },
-          ],
-        };
+      const task = state.assignments.find((a) => a.id === essay?.assignmentId);
+      const reviewClass = state.classrooms.find((c) => c.id === task?.classroomId);
+      if (!essay || essay.status === 'draft' || !reviewClass ||
+        (reviewClass.teacherId !== state.currentUser.id &&
+          (!reviewClass.studentIds.includes(state.currentUser.id) || essay.authorId === state.currentUser.id))) {
+        get().addToast({ type: 'warning', title: 'Недопустимое действие', message: 'Вы не можете оценивать собственное эссе.' });
+        return false;
       }
 
       const activeCriteria = (active.reviewedCriteria && active.reviewedCriteria.length > 0)
@@ -354,11 +404,21 @@ export const useStore = create<AppState>()(
 
       const isPartial = activeCriteria.length < 4;
       const existingReview = state.reviews.find((r) => r.essayId === active.essayId);
+      const isOwner = reviewClass.teacherId === state.currentUser.id;
+      if (!isOwner && (existingReview?.editedByTeacher || activeCriteria.some((k) => {
+        const evaluator = existingReview?.criteriaEvaluators?.[k]?.userId;
+        const legacyOwner = existingReview && (existingReview.reviewedCriteria?.length
+          ? existingReview.reviewedCriteria.includes(k) : existingReview.isComplete) ? existingReview.reviewerId : undefined;
+        return (evaluator || legacyOwner) && (evaluator || legacyOwner) !== state.currentUser!.id;
+      }))) {
+        get().addToast({ type: 'warning', title: 'Оценка защищена', message: 'Выберите критерии, которые ещё не оценены другим участником.' });
+        return false;
+      }
 
       const myContrib: ReviewContributor = {
         userId: state.currentUser.id,
         userName: state.currentUser.name,
-        role: state.currentUser.role,
+        role: isOwner ? 'teacher' : 'student',
         criteriaAssessed: activeCriteria,
       };
 
@@ -432,7 +492,8 @@ export const useStore = create<AppState>()(
         contributors: mergedContributors,
         isPartial: !fullyAssessed,
         overallBand: computedOverall,
-        generalVerdict: active.generalVerdict || existingReview?.generalVerdict || '',
+        generalVerdict: existingReview && existingReview.reviewerId !== state.currentUser.id && !isOwner
+          ? existingReview.generalVerdict : active.generalVerdict || existingReview?.generalVerdict || '',
         createdAt: existingReview ? existingReview.createdAt : new Date().toISOString(),
         isComplete: true,
       };
@@ -459,6 +520,7 @@ export const useStore = create<AppState>()(
         title: 'Получена рецензия',
         body: `${reviewerName} проверил(а) работу ${isPartial ? '(модульная проверка)' : ''}. Балл: ${computedOverall.toFixed(1)}.`,
         assignmentId: assignment?.id,
+        essayId: essay?.id,
         classroomId: classroom?.id,
         recipientId: classroom?.teacherId || '',
         createdAt: new Date().toISOString(),
@@ -485,110 +547,94 @@ export const useStore = create<AppState>()(
         return 'novice' as const;
       };
 
-      const updatedReviews = existingReview
-        ? state.reviews.map((r) => (r.id === existingReview.id ? completedReview : r))
-        : [...state.reviews, completedReview];
-
-      // Persist review and notifications to Supabase
-      upsertReview(completedReview).then((realId) => {
-        if (realId && realId !== completedReview.id) {
-          useStore.setState((s) => ({
-            reviews: s.reviews.map((r) => r.id === completedReview.id ? { ...r, id: realId } : r),
-          }));
-        }
-      });
-      insertNotification({ type: newNotif.type, title: newNotif.title, body: newNotif.body, essayId: newNotif.essayId, assignmentId: newNotif.assignmentId, recipientId: newNotif.recipientId });
-      insertNotification({ type: teacherNotif.type, title: teacherNotif.title, body: teacherNotif.body, assignmentId: teacherNotif.assignmentId, classroomId: teacherNotif.classroomId, recipientId: teacherNotif.recipientId });
-
-      return {
-        reviews: updatedReviews,
+      const realId = await upsertReview(completedReview);
+      if (!realId) {
+        get().addToast({ type: 'warning', title: 'Рецензия не сохранена', message: 'Проверьте соединение и попробуйте ещё раз.' });
+        return false;
+      }
+      if (get().currentUser?.id !== state.currentUser.id) return false;
+      const persistedReview = { ...completedReview, id: realId };
+      set((current) => ({
+        reviews: existingReview
+          ? current.reviews.map((r) => r.id === existingReview.id ? persistedReview : r)
+          : [...current.reviews, persistedReview],
         activeReview: null,
-        essays: state.essays.map((e) =>
+        essays: current.essays.map((e) =>
           e.id === completedReview.essayId
             ? { ...e, status: fullyAssessed ? ('reviewed' as const) : ('reviewing' as const) }
             : e
         ),
-        notifications: [...state.notifications, newNotif, teacherNotif],
-        toasts: [...state.toasts, toast],
+        notifications: [...current.notifications, newNotif, teacherNotif],
+        toasts: [...current.toasts, toast],
         xp: newXp,
         reviewerRank: getRank(newXp),
         lastActivityDate: new Date().toISOString(),
-      };
-    }),
+      }));
+      void insertNotification({ type: newNotif.type, title: newNotif.title, body: newNotif.body, essayId: newNotif.essayId, assignmentId: newNotif.assignmentId, recipientId: newNotif.recipientId });
+      void insertNotification({ type: teacherNotif.type, title: teacherNotif.title, body: teacherNotif.body, essayId: teacherNotif.essayId, assignmentId: teacherNotif.assignmentId, classroomId: teacherNotif.classroomId, recipientId: teacherNotif.recipientId });
+      return true;
+    },
 
-  createClassroom: (classroom) => {
-    const tempId = `class-${Date.now()}`;
+  createClassroom: async (classroom) => {
+    if (get().currentUser?.id !== classroom.teacherId) return false;
+    const realId = await insertClassroom(classroom);
+    if (!realId) {
+      get().addToast({ type: 'warning', title: 'Класс не создан', message: 'Проверьте соединение и попробуйте ещё раз.' });
+      return false;
+    }
+    if (get().currentUser?.id !== classroom.teacherId) return false;
     const newClassroom: Classroom = {
       ...classroom,
-      id: tempId,
+      id: realId,
       studentIds: [],
       createdAt: new Date().toISOString(),
     };
     set((state) => ({ classrooms: [...state.classrooms, newClassroom] }));
-    // Persist to Supabase and swap temp id with real UUID
-    insertClassroom(classroom).then((realId) => {
-      if (realId && realId !== tempId) {
-        useStore.setState((s) => ({
-          classrooms: s.classrooms.map((c) =>
-            c.id === tempId ? { ...c, id: realId } : c
-          ),
-        }));
-      }
-    });
+    get().addToast({ type: 'success', title: 'Класс создан', message: 'Код класса готов для участников.' });
+    return true;
   },
 
-  joinClassroom: (rawCode) => {
+  joinClassroom: async (rawCode) => {
     const state = get();
     const code = rawCode.trim().toUpperCase();
-    const classroom = state.classrooms.find((c) => c.code.trim().toUpperCase() === code);
-    if (!classroom || !state.currentUser) return { success: false, reason: 'not_found' };
-
-    if (classroom.teacherId === state.currentUser.id) {
-      return { success: false, reason: 'teacher_owner' };
-    }
-    if (classroom.studentIds.includes(state.currentUser.id)) {
-      return { success: false, reason: 'already_joined' };
-    }
-
-    set({
-      classrooms: state.classrooms.map((c) =>
-        c.id === classroom.id
-          ? { ...c, studentIds: [...c.studentIds, state.currentUser!.id] }
-          : c
-      ),
-      toasts: [
-        ...state.toasts,
-        {
-          id: `toast-${Date.now()}`,
-          type: 'success',
-          title: 'Вы присоединились к классу!',
-          message: `Добро пожаловать в класс "${classroom.name}".`,
-        },
-      ],
-    });
-    // Persist to Supabase
-    insertClassroomStudent(classroom.id, state.currentUser!.id);
+    if (!state.currentUser) return { success: false, reason: 'server_error' };
+    const userId = state.currentUser.id;
+    const result = await joinClassroomByCode(code);
+    if (!result.success) return result;
+    const [classrooms, users, assignments, essays, reviews, notifications] = await Promise.all([
+      fetchAllClassrooms(), fetchAllProfiles(), fetchAllAssignments(), fetchAllEssays(),
+      fetchAllReviews(), fetchNotificationsForUser(userId),
+    ]);
+    if (get().currentUser?.id !== userId) return { success: false, reason: 'server_error' };
+    set({ classrooms, users, assignments, essays, reviews, notifications });
+    get().addToast({ type: 'success', title: 'Вы присоединились к классу!', message: 'Членство подтверждено сервером.' });
     return { success: true };
   },
 
-  createAssignment: (assignment) =>
-    set((state) => {
+  createAssignment: async (assignment) => {
+      const state = get();
+      const classroom = state.classrooms.find((c) => c.id === assignment.classroomId);
+      if (!classroom || state.currentUser?.id !== classroom.teacherId) return false;
       const sanitizedPrompt = assignment.prompt.slice(0, 3000);
-      const tempId = `assign-${Date.now()}`;
+      const realId = await insertAssignment({ ...assignment, prompt: sanitizedPrompt });
+      if (!realId) {
+        get().addToast({ type: 'warning', title: 'Задание не опубликовано', message: 'Проверьте соединение и попробуйте ещё раз.' });
+        return false;
+      }
+      if (get().currentUser?.id !== classroom.teacherId) return false;
       const newAssignment: Assignment = {
         ...assignment,
         prompt: sanitizedPrompt,
-        id: tempId,
+        id: realId,
         createdAt: new Date().toISOString(),
       };
-      const classroom = state.classrooms.find((c) => c.id === assignment.classroomId);
       const studentNotifs: Notification[] = (classroom?.studentIds || []).map((sid, i) => ({
         id: `notif-${Date.now()}-${i}`,
         type: 'new_assignment' as const,
         title: 'Новое задание!',
         body: `${state.currentUser?.name || 'Учитель'} опубликовал(а) "${assignment.title}"${classroom ? ` в классе ${classroom.name}` : ''}.`,
         classroomId: assignment.classroomId,
-        assignmentId: tempId,
+        assignmentId: realId,
         recipientId: sid,
         createdAt: new Date().toISOString(),
         read: false,
@@ -599,102 +645,17 @@ export const useStore = create<AppState>()(
         title: 'Задание опубликовано!',
         message: `"${assignment.title}" отправлено в класс.`,
       };
-      // Persist to Supabase
-      insertAssignment({ ...assignment, prompt: sanitizedPrompt }).then((realId) => {
-        if (realId) {
-          useStore.setState((s) => ({
-            assignments: s.assignments.map((a) => a.id === tempId ? { ...a, id: realId } : a),
-          }));
-          // Send notifications to DB
-          studentNotifs.forEach((n) => insertNotification({ ...n, assignmentId: realId }));
-        }
-      });
-      return {
-        assignments: [...state.assignments, newAssignment],
-        notifications: [...state.notifications, ...studentNotifs],
-        toasts: [...state.toasts, newToast],
-      };
-    }),
+      set((current) => ({
+        assignments: [...current.assignments, newAssignment],
+        toasts: [...current.toasts, newToast],
+      }));
+      studentNotifs.forEach((notification) => { void insertNotification(notification); });
+      return true;
+    },
 
-  submitEssay: (essay) =>
-    set((state) => {
-      const sanitizedContent = essay.content.slice(0, 3000);
-      const words = sanitizedContent.trim().split(/\s+/).filter(Boolean).length;
-      const existingIdx = state.essays.findIndex(
-        (e) => e.assignmentId === essay.assignmentId && e.authorId === essay.authorId
-      );
+  submitEssay: (essay) => persistEssay(essay, 'submitted'),
 
-      const submittedEssay: Essay = {
-        ...essay,
-        content: sanitizedContent,
-        wordCount: words,
-        id: existingIdx >= 0 ? state.essays[existingIdx].id : `essay-${Date.now()}`,
-        status: 'submitted',
-        submittedAt: new Date().toISOString(),
-      };
-
-      const updatedEssays = existingIdx >= 0
-        ? state.essays.map((e, idx) => (idx === existingIdx ? submittedEssay : e))
-        : [...state.essays, submittedEssay];
-
-      // Persist to Supabase
-      upsertEssay(submittedEssay).then((realId) => {
-        if (realId && realId !== submittedEssay.id) {
-          useStore.setState((s) => ({
-            essays: s.essays.map((e) => e.id === submittedEssay.id ? { ...e, id: realId } : e),
-          }));
-        }
-      });
-
-      const newToast: ToastMessage = {
-        id: `toast-${Date.now()}`,
-        type: 'success',
-        title: 'Эссе успешно отправлено!',
-        message: `Объем: ${words} слов. Работа направлена на рецензирование одноклассникам.`,
-      };
-      return {
-        essays: updatedEssays,
-        toasts: [...state.toasts, newToast],
-      };
-    }),
-
-  saveDraft: (essay) =>
-    set((state) => {
-      const sanitizedContent = essay.content.slice(0, 3000);
-      const words = sanitizedContent.trim().split(/\s+/).filter(Boolean).length;
-      const existingIdx = state.essays.findIndex(
-        (e) => e.assignmentId === essay.assignmentId && e.authorId === essay.authorId
-      );
-
-      const draftEssay: Essay = {
-        ...essay,
-        content: sanitizedContent,
-        wordCount: words,
-        id: existingIdx >= 0 ? state.essays[existingIdx].id : `essay-${Date.now()}`,
-        status: 'draft',
-      };
-
-      const updatedEssays = existingIdx >= 0
-        ? state.essays.map((e, idx) => (idx === existingIdx ? draftEssay : e))
-        : [...state.essays, draftEssay];
-
-      // Persist to Supabase
-      upsertEssay(draftEssay);
-
-      return {
-        essays: updatedEssays,
-        toasts: [
-          ...state.toasts,
-          {
-            id: `toast-draft-${Date.now()}`,
-            type: 'info',
-            title: 'Черновик сохранён',
-            message: `Сохранено ${words} слов. Вы можете вернуться к редактированию позже.`,
-            duration: 3000,
-          },
-        ],
-      };
-    }),
+  saveDraft: (essay) => persistEssay(essay, 'draft'),
 
   // Notifications
   addNotification: (notif) =>
@@ -851,10 +812,10 @@ export const useStore = create<AppState>()(
       return { streak: newStreak, lastActivityDate: new Date().toISOString() };
     }),
 
-  updateReviewByTeacher: (reviewId, updates) =>
-    set((state) => {
+  updateReviewByTeacher: async (reviewId, updates) => {
+      const state = get();
       const existing = state.reviews.find((r) => r.id === reviewId);
-      if (!existing) return state;
+      if (!existing) return false;
 
       const teacher = state.currentUser?.role === 'teacher' ? state.currentUser : null;
       const teacherName = teacher?.name || 'Teacher';
@@ -862,6 +823,8 @@ export const useStore = create<AppState>()(
 
       const essay = state.essays.find((e) => e.id === existing.essayId);
       const assignment = essay ? state.assignments.find((a) => a.id === essay.assignmentId) : null;
+      if (!teacher || !essay || essay.status === 'draft' ||
+        !state.classrooms.some((c) => c.id === assignment?.classroomId && c.teacherId === teacher.id)) return false;
       const studentAuthor = essay ? state.users.find((u) => u.id === essay.authorId) : null;
       const originalBand = existing.originalBand ?? existing.overallBand;
 
@@ -917,22 +880,33 @@ export const useStore = create<AppState>()(
         duration: 5000,
       };
 
-      return {
-        reviews: state.reviews.map((r) => (r.id === reviewId ? updatedReview : r)),
-        essays: state.essays.map((e) => (e.id === existing.essayId ? { ...e, status: 'reviewed' as const } : e)),
-        notifications: [authorNotif, reviewerNotif, ...state.notifications],
-        toasts: [...state.toasts, toast],
-      };
-    }),
+      const realId = await upsertReview(updatedReview);
+      if (!realId) {
+        get().addToast({ type: 'warning', title: 'Оценка не сохранена', message: 'Проверьте соединение и попробуйте ещё раз.' });
+        return false;
+      }
+      if (get().currentUser?.id !== teacher.id) return false;
+      set((current) => ({
+        reviews: current.reviews.map((r) => (r.id === reviewId ? { ...updatedReview, id: realId } : r)),
+        essays: current.essays.map((e) => (e.id === existing.essayId ? { ...e, status: 'reviewed' as const } : e)),
+        notifications: [authorNotif, reviewerNotif, ...current.notifications],
+        toasts: [...current.toasts, toast],
+      }));
+      void insertNotification(authorNotif);
+      if (existing.reviewerId !== teacher.id) void insertNotification(reviewerNotif);
+      return true;
+    },
 
-  createTeacherReview: (essayId, reviewData) =>
-    set((state) => {
+  createTeacherReview: async (essayId, reviewData) => {
+      const state = get();
       const teacher = state.currentUser?.role === 'teacher' ? state.currentUser : null;
       const teacherName = teacher?.name || 'Teacher';
       const teacherId = teacher?.id || 'teacher-1';
 
       const essay = state.essays.find((e) => e.id === essayId);
       const assignment = essay ? state.assignments.find((a) => a.id === essay.assignmentId) : null;
+      if (!teacher || !essay || essay.status === 'draft' ||
+        !state.classrooms.some((c) => c.id === assignment?.classroomId && c.teacherId === teacher.id)) return false;
       const studentAuthor = essay ? state.users.find((u) => u.id === essay.authorId) : null;
 
       const newReview: Review = {
@@ -973,13 +947,21 @@ export const useStore = create<AppState>()(
         duration: 5000,
       };
 
-      return {
-        reviews: [...state.reviews, newReview],
-        essays: state.essays.map((e) => (e.id === essayId ? { ...e, status: 'reviewed' as const } : e)),
-        notifications: [authorNotif, ...state.notifications],
-        toasts: [...state.toasts, toast],
-      };
-    }),
+      const realId = await upsertReview(newReview);
+      if (!realId) {
+        get().addToast({ type: 'warning', title: 'Оценка не сохранена', message: 'Проверьте соединение и попробуйте ещё раз.' });
+        return false;
+      }
+      if (get().currentUser?.id !== teacher.id) return false;
+      set((current) => ({
+        reviews: [...current.reviews, { ...newReview, id: realId }],
+        essays: current.essays.map((e) => (e.id === essayId ? { ...e, status: 'reviewed' as const } : e)),
+        notifications: [authorNotif, ...current.notifications],
+        toasts: [...current.toasts, toast],
+      }));
+      void insertNotification(authorNotif);
+      return true;
+    },
 
   resetDatabase: () => {
     try {
@@ -1012,21 +994,13 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'ielts_peer_review_db_v1',
+      version: 2,
       storage: createJSONStorage(() => safeLocalStorage),
+      migrate: (persisted) => ({ theme: (persisted as Partial<AppState>).theme }),
+      merge: (persisted, current) => ({ ...current,
+        theme: (persisted as Partial<AppState>)?.theme === 'light' ? 'light' : 'dark' }),
       partialize: (state) => ({
         theme: state.theme,
-        currentUser: state.currentUser,
-        users: state.users,
-        classrooms: state.classrooms,
-        assignments: state.assignments,
-        essays: state.essays,
-        reviews: state.reviews,
-        notifications: state.notifications,
-        badges: state.badges,
-        xp: state.xp,
-        streak: state.streak,
-        reviewerRank: state.reviewerRank,
-        lastActivityDate: state.lastActivityDate,
       }),
     }
   )
@@ -1039,6 +1013,13 @@ export function initReviewForEssay(essayId: string, reviewerId: string, existing
       id: existingReview.id,
       essayId,
       reviewerId,
+      reviewedCriteria: (['taskResponse', 'coherence', 'lexicalResource', 'grammar'] as CriterionKey[])
+        .filter((k) => {
+          const owner = existingReview.criteriaEvaluators?.[k]?.userId ||
+            ((existingReview.reviewedCriteria?.length ? existingReview.reviewedCriteria.includes(k)
+              : existingReview.isComplete) ? existingReview.reviewerId : undefined);
+          return !owner || owner === reviewerId;
+        }),
       isComplete: false,
     };
   }
@@ -1046,5 +1027,19 @@ export function initReviewForEssay(essayId: string, reviewerId: string, existing
   r.essayId = essayId;
   r.reviewerId = reviewerId;
   return r;
+}
+
+export function canEditReviewCriterion(review: Review, key: CriterionKey, userId: string): boolean {
+  const { essays, assignments, classrooms } = useStore.getState();
+  const essay = essays.find((e) => e.id === review.essayId);
+  const assignment = assignments.find((a) => a.id === essay?.assignmentId);
+  if (classrooms.some((c) => c.id === assignment?.classroomId && c.teacherId === userId)) return true;
+  if (review.editedByTeacher || review.teacherId) return false;
+  const savedReview = useStore.getState().reviews.find((r) => r.id === review.id);
+  if (!savedReview) return true;
+  const owner = savedReview.criteriaEvaluators?.[key]?.userId ||
+    ((savedReview.reviewedCriteria?.length ? savedReview.reviewedCriteria.includes(key)
+      : savedReview.isComplete) ? savedReview.reviewerId : undefined);
+  return !owner || owner === userId;
 }
 

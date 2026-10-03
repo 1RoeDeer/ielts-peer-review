@@ -9,12 +9,18 @@ const JoinClassroomModal: React.FC<JoinClassroomModalProps> = ({ onClose }) => {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [pending, setPending] = useState(false);
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
+    if (pending || success) return;
     setError('');
     const trimmed = code.trim().toUpperCase();
     if (!trimmed) { setError('Пожалуйста, введите код класса.'); return; }
-    const res = joinClassroom(trimmed);
+    setPending(true);
+    let res;
+    try { res = await joinClassroom(trimmed); }
+    catch { res = { success: false, reason: 'server_error' }; }
+    finally { setPending(false); }
     if (res.success) {
       setSuccess(true);
       setTimeout(onClose, 1200);
@@ -23,6 +29,8 @@ const JoinClassroomModal: React.FC<JoinClassroomModalProps> = ({ onClose }) => {
         setError('Вы уже состоите в этом классе.');
       } else if (res.reason === 'teacher_owner') {
         setError('Вы являетесь преподавателем этого класса.');
+      } else if (res.reason === 'server_error') {
+        setError('Не удалось подтвердить вступление. Повторите попытку.');
       } else {
         setError('Класс с таким кодом не найден. Проверьте код и попробуйте снова.');
       }
@@ -67,18 +75,11 @@ const JoinClassroomModal: React.FC<JoinClassroomModalProps> = ({ onClose }) => {
               ✓ Successfully joined! Redirecting...
             </div>
           )}
-          <div className="px-3 py-2.5 rounded-lg text-xs"
-            style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-            Demo codes:{' '}
-            <code className="font-mono" style={{ color: 'var(--text-secondary)' }}>IELTS-A7X2</code> ·{' '}
-            <code className="font-mono" style={{ color: 'var(--text-secondary)' }}>IELTS-G9K1</code> ·{' '}
-            <code className="font-mono" style={{ color: 'var(--text-secondary)' }}>IELTS-W4P8</code>
-          </div>
         </div>
         <div className="flex gap-3 p-5" style={{ borderTop: '1px solid var(--border)' }}>
           <button onClick={onClose} className="btn-secondary flex-1 justify-center">Cancel</button>
-          <button onClick={handleJoin} className="btn-primary flex-1 justify-center">
-            <LogIn size={14} /> Join Class
+          <button onClick={handleJoin} disabled={pending || success} className="btn-primary flex-1 justify-center">
+            <LogIn size={14} /> {pending ? 'Joining…' : 'Join Class'}
           </button>
         </div>
       </div>

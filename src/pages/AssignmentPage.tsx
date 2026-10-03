@@ -32,13 +32,14 @@ const AssignmentPage: React.FC = () => {
 
   const assignment = assignments.find((a) => a.id === assignmentId);
   const classroom = assignment ? classrooms.find((c) => c.id === assignment.classroomId) : null;
-  const isTeacher = currentUser?.role === 'teacher';
+  const isTeacher = !!currentUser && classroom?.teacherId === currentUser.id;
 
   const myEssay = !isTeacher
     ? essays.find((e) => e.assignmentId === assignmentId && e.authorId === currentUser?.id)
     : null;
 
   const [essayText, setEssayText] = useState(myEssay?.content || '');
+  const [isSavingEssay, setIsSavingEssay] = useState(false);
   const [isExamModeOpen, setIsExamModeOpen] = useState(false);
   const [selectedForGradeEdit, setSelectedForGradeEdit] = useState<{ review?: Review; essay: Essay } | null>(null);
 
@@ -49,7 +50,8 @@ const AssignmentPage: React.FC = () => {
     }
   }, [myEssay?.content]);
 
-  if (!assignment) {
+  if (!assignment || !classroom || !currentUser ||
+    (classroom.teacherId !== currentUser.id && !classroom.studentIds.includes(currentUser.id))) {
     return (
       <AppShell title="Задание не найдено">
         <div className="p-8 max-w-xl mx-auto text-center space-y-4">
@@ -103,25 +105,26 @@ const AssignmentPage: React.FC = () => {
     });
   };
 
-  const handleSaveDraft = () => {
-    if (!currentUser || !essayText.trim()) return;
+  const handleSaveDraft = async () => {
+    if (!currentUser || !essayText.trim() || isSavingEssay) return;
     const words = essayText.trim().split(/\s+/).filter(Boolean).length;
-    saveDraft({
+    setIsSavingEssay(true);
+    try { await saveDraft({
       assignmentId: assignment.id,
       authorId: currentUser.id,
       content: essayText,
       wordCount: words,
       status: 'draft',
-    });
+    }); } finally { setIsSavingEssay(false); }
   };
 
-  const handleSubmitEssay = (metrics?: {
+  const handleSubmitEssay = async (metrics?: {
     timeSpentSeconds: number;
     keystrokesCount: number;
     pasteAttempts: number;
     averageWpm: number;
   }) => {
-    if (!currentUser || !essayText.trim()) return;
+    if (!currentUser || !essayText.trim() || isSavingEssay) return;
     const words = essayText.trim().split(/\s+/).filter(Boolean).length;
     if (words < assignment.minWords) {
       addToast({
@@ -131,7 +134,8 @@ const AssignmentPage: React.FC = () => {
       });
       return;
     }
-    submitEssay({
+    setIsSavingEssay(true);
+    try { await submitEssay({
       assignmentId: assignment.id,
       authorId: currentUser.id,
       content: essayText.trim(),
@@ -141,13 +145,14 @@ const AssignmentPage: React.FC = () => {
       keystrokesCount: metrics?.keystrokesCount,
       pasteAttempts: metrics?.pasteAttempts,
       averageWpm: metrics?.averageWpm,
-    });
+    }); } finally { setIsSavingEssay(false); }
   };
 
-  const handleSubmitExam = (examText: string, timeSpentSeconds: number) => {
-    if (!currentUser || !examText.trim()) return;
+  const handleSubmitExam = async (examText: string, timeSpentSeconds: number) => {
+    if (!currentUser || !examText.trim() || isSavingEssay) return;
     const words = examText.trim().split(/\s+/).filter(Boolean).length;
-    submitEssay({
+    setIsSavingEssay(true);
+    try { const saved = await submitEssay({
       assignmentId: assignment.id,
       authorId: currentUser.id,
       content: examText.trim(),
@@ -157,7 +162,8 @@ const AssignmentPage: React.FC = () => {
       timeSpentSeconds,
       averageWpm: timeSpentSeconds > 0 ? Math.round(words / (timeSpentSeconds / 60)) : undefined,
     });
-    setIsExamModeOpen(false);
+    if (saved) setIsExamModeOpen(false);
+    } finally { setIsSavingEssay(false); }
   };
 
   return (
@@ -241,6 +247,7 @@ const AssignmentPage: React.FC = () => {
             onChangeText={setEssayText}
             onSubmit={handleSubmitEssay}
             onSaveDraft={handleSaveDraft}
+            isSaving={isSavingEssay}
             onOpenExamSimulator={() => setIsExamModeOpen(true)}
             existingDraft={myEssay}
             onPasteBlocked={handlePasteBlocked}

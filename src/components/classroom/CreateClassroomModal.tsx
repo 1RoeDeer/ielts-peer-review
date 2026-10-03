@@ -15,6 +15,7 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({ onClose }) 
   const [description, setDescription] = useState('');
   const [code] = useState(generateCode);
   const [copied, setCopied] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -22,10 +23,12 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({ onClose }) 
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleCreate = () => {
-    if (!name.trim() || !currentUser) return;
-    createClassroom({ name: name.trim(), description: description.trim(), code, color: 'neutral', teacherId: currentUser.id });
-    onClose();
+  const handleCreate = async () => {
+    if (!name.trim() || !currentUser || isCreating) return;
+    setIsCreating(true);
+    try {
+      if (await createClassroom({ name: name.trim(), description: description.trim(), code, color: 'neutral', teacherId: currentUser.id })) onClose();
+    } finally { setIsCreating(false); }
   };
 
   return (
@@ -62,8 +65,8 @@ const CreateClassroomModal: React.FC<CreateClassroomModalProps> = ({ onClose }) 
         </div>
         <div className="flex gap-3 p-5" style={{ borderTop: '1px solid var(--border)' }}>
           <button onClick={onClose} className="btn-secondary flex-1 justify-center">Cancel</button>
-          <button onClick={handleCreate} disabled={!name.trim()} className="btn-primary flex-1 justify-center">
-            Create Classroom
+          <button onClick={handleCreate} disabled={!name.trim() || isCreating} className="btn-primary flex-1 justify-center">
+            {isCreating ? 'Creating…' : 'Create Classroom'}
           </button>
         </div>
       </div>

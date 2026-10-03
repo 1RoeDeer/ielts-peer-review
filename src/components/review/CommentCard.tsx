@@ -21,7 +21,8 @@ interface CommentCardProps {
 }
 
 const CommentCard: React.FC<CommentCardProps> = ({ comment, onClose }) => {
-  const { updateInlineComment, deleteInlineComment } = useStore();
+  const { currentUser, updateInlineComment, deleteInlineComment } = useStore();
+  const canEdit = comment.authorId === currentUser?.id;
   const [editing, setEditing] = useState(false);
   const [editComment, setEditComment] = useState(comment.comment);
   const [editSuggestion, setEditSuggestion] = useState(comment.suggestion || '');
@@ -52,12 +53,13 @@ const CommentCard: React.FC<CommentCardProps> = ({ comment, onClose }) => {
           {meta.label}
         </div>
         <div className="flex items-center gap-1">
-          {!editing && (
+          {canEdit && !editing && (
             <button onClick={() => setEditing(true)} className="btn-ghost" style={{ padding: '5px' }}>
               <Pencil size={12} />
             </button>
           )}
           <button
+            disabled={!canEdit}
             onClick={() => { deleteInlineComment(comment.id); onClose(); }}
             className="btn-ghost"
             style={{ padding: '5px', color: '#dc2626' }}
