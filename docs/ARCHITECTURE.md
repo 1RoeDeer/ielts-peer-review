@@ -109,7 +109,7 @@ Reviews доступны для отправленных эссе класса. 
 
 Notifications читает адресат с доступом к контексту; UPDATE разрешает только `read`. INSERT допускается владельцу в своём классе или рецензенту после сохранения review — автору работы/владельцу класса. Несогласованные ссылки, чужие адресаты и `all` запрещены. `anon` не имеет CRUD grants; protected RPC доступен только authenticated. Полная матрица и live rollout проверки: `supabase/tests/README.md`.
 
-Широкие live policies/grants были подтверждены до миграции. 2026-10-03 три миграции применены к проекту Supabase `bazsuolubwqulkeqvwlt`; postflight подтвердил 19 адресных policies, отсутствие table SELECT для `anon`, приватную схему без `anon` USAGE и доверенное владение helper functions. Два существующих ученика успешно вошли и увидели свой класс. Межклассовый тест с реальными JWT и публикация нового клиента ещё нужны. Пользовательские metadata нельзя считать доверенным источником авторизации: это отдельно подтверждается [документацией Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
+Широкие live policies/grants были подтверждены до миграции. 2026-10-03 три миграции применены к проекту Supabase `bazsuolubwqulkeqvwlt`; postflight подтвердил 19 адресных policies, отсутствие table SELECT для `anon`, приватную схему без `anon` USAGE и доверенное владение helper functions. Новый клиент опубликован. Два существующих ученика успешно вошли; через их реальные JWT временный отдельный класс, задание и эссе были видны владельцу и скрыты от второго ученика. Чужие essay/grade UPDATE были отклонены, anon не получил защищённые строки; временные записи удалены с проверкой отсутствия остатков. Пользовательские metadata нельзя считать доверенным источником авторизации: это отдельно подтверждается [документацией Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
 Нет реализованного восстановления пароля. Нормализация имён допускает коллизии; для имён, очищающихся в пустую строку, используется меняющийся timestamp. Возможность входа после регистрации зависит от email confirmation в Supabase; настройка UNKNOWN.
 
@@ -171,7 +171,7 @@ Auth-формы показывают ошибки SDK. CRUD helpers обычно
 
 # Security
 
-- D01 применён в live Supabase 2026-10-03; межклассовый JWT/Data API тест ещё не проведён. UI guard не security boundary.
+- D01 применён в live Supabase 2026-10-03; межклассовый JWT/Data API тест классов, заданий, эссе, чужих UPDATE и anon прошёл. UI guard не security boundary; полный цикл записи/teacher grade ещё требует live проверки.
 - Пароли передаются Supabase Auth, в доменных таблицах/store пароль не хранится. Пользовательский текст рендерится JSX; dangerouslySetInnerHTML/eval в прикладном коде не обнаружены. Это не полноценный security audit всех зависимостей.
 - `.env` исключён Git; live read-only anon probe загружал его в памяти без вывода значений. VITE-переменные попадают в клиентскую сборку; допустим публичный Supabase anon key, но не service-role/LLM/payment secrets. Механизм описан в [Vite env docs](https://vite.dev/guide/env-and-mode).
 - Учебные данные/пользователь больше не сохраняются в Zustand localStorage. Очистка прежнего cache и поведение Auth session на общих устройствах требуют live browser проверки.
@@ -204,7 +204,7 @@ RECOMMENDED проверки для будущих изменений:
 - Конфигурация: `vite.config.ts`, `tsconfig.app.json`, `tsconfig.node.json`, `postcss.config.js`, `tailwind.config.js`, `.oxlintrc.json`. Runtime config endpoint нет; VITE-настройки задаются до сборки.
 - `.env.example`, Docker/IaC, migrations runner и CI/CD workflow отсутствуют. Для новой БД — `supabase_schema.sql`, для существующей — три последовательные migrations после сравнения live схемы; нельзя считать наличие SQL подтверждением rollout. `vercel.json` задаёт SPA rewrite.
 - `deploy.bat` делает git add -A, commit, force-push в main и сообщает про Vercel; `fix_email.bat` меняет global git config, amend и force-push. Это опасные вспомогательные скрипты, не проверенный безопасный release pipeline.
-- KNOWN: live Supabase schema/grants/policies сверены и обновлены; Vercel проект `ielts-peer-review` связан с GitHub `1RoeDeer/ielts-peer-review`, preview и production deployment от 2026-10-03 получили READY, а защищённый BrowserRouter deep link открывается после reload. UNKNOWN: email confirmation, TLS/headers, backups, rollback и реальная межклассовая изоляция через JWT/Data API.
+- KNOWN: live Supabase schema/grants/policies сверены и обновлены, межклассовый JWT/Data API smoke test прошёл; Vercel проект `ielts-peer-review` связан с GitHub `1RoeDeer/ielts-peer-review`, preview и production deployment от 2026-10-03 получили READY, а защищённый BrowserRouter deep link открывается после reload. UNKNOWN: email confirmation, TLS/headers, backups, rollback и сквозная запись/reload/teacher grade в двух сессиях.
 
 # Observability
 

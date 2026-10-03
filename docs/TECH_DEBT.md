@@ -8,13 +8,13 @@
 
 ## D01 — Нет надёжной изоляции классов и авторизации записей
 
-- **STATUS:** RLS MIGRATION APPLIED IN LIVE 2026-10-03; PostgreSQL allow/deny regression проходит локально. Проверка двух разных классов с реальными JWT ещё нужна.
+- **STATUS:** RLS MIGRATION APPLIED IN LIVE 2026-10-03; PostgreSQL allow/deny regression проходит локально, межклассовый smoke test с реальными JWT прошёл.
 - **AREA:** Authorization, privacy, integrity.
 - **FILES:** `supabase_schema.sql`, `supabase/migrations/202610010001_classroom_rls.sql`, `supabase/tests/`, `src/App.tsx`, `src/lib/db.ts`, store, classroom/review components и связанные pages.
 - **WAS:** чтение всех классов и широкая запись assignments/essays/reviews; join по UUID без кода; роль из metadata; отсутствие object guards и закрытой пустой очереди.
 - **FIX:** права по auth.uid/владельцу/членству, явные table/column grants, private helpers без RLS recursion, join-by-code RPC. Черновики доступны только автору-участнику; reviews guard защищает чужие критерии, комментарии, contributors и teacher fields, пересчитывает peer Band. Самостоятельная роль остаётся UI preference и не участвует в серверной авторизации. Профиль берётся из БД; cache не восстанавливает пользователя/учебные данные, session load имеет generation guard; чужие deep links закрыты.
-- **LIVE EVIDENCE:** до миграции policies `auth.role() = authenticated` открывали classes/assignments/essays/reviews всем вошедшим, а grants давали широкие записи. Схема семи таблиц, дополнительные views/functions, grants, владельцы и связанные записи сверены; live миграции `classroom_rls`, `review_status`, `profile_trigger_acl` применены. После них `anon` не имеет table SELECT/private schema/RPC, а оба существующих ученика вошли и увидели свой класс. Security Advisor больше не показывает public trigger warning; join RPC по коду намеренно остаётся доступен вошедшим.
-- **REMAINING:** проверить реальные JWT/Data API двух *разных* классов, блокировки UPDATE и запись → reload → второй аккаунт. Историческое авторство ранее доступных для подмены записей требует проверки; migration не восстанавливает его. D04/D07 остаются частично открытыми.
+- **LIVE EVIDENCE:** до миграции policies `auth.role() = authenticated` открывали classes/assignments/essays/reviews всем вошедшим, а grants давали широкие записи. Схема семи таблиц, дополнительные views/functions, grants, владельцы и связанные записи сверены; live миграции `classroom_rls`, `review_status`, `profile_trigger_acl` применены. После них `anon` не имеет table SELECT/private schema/RPC; два существующих пользователя вошли с реальными JWT. Временный отдельный класс, задание и эссе были доступны владельцу, но скрыты от второго ученика; чужие essay/grade UPDATE дали ноль строк, anon не получил защищённые данные. Временные записи удалены. Security Advisor больше не показывает public trigger warning; join RPC по коду намеренно остаётся доступен вошедшим.
+- **REMAINING:** проверить полный цикл запись → reload → второй аккаунт, teacher-grade запись через UI и более широкую матрицу ролей. Историческое авторство ранее доступных для подмены записей требует проверки; migration не восстанавливает его. D04/D07 остаются частично открытыми.
 
 # High
 
