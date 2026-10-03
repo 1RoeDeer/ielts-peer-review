@@ -38,8 +38,10 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
       <button
         type="button"
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="md:hidden p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors flex items-center justify-center"
+        className="md:hidden btn-ghost flex-shrink-0 flex items-center justify-center"
         aria-label="Toggle navigation menu"
+        aria-expanded={sidebarOpen}
+        aria-controls="main-sidebar"
       >
         <Menu size={20} />
       </button>
@@ -68,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
       </nav>
 
       {/* Actions */}
-      <div className="flex items-center gap-1">
+      <div className="header-actions flex items-center gap-1 flex-shrink-0">
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
@@ -87,10 +89,10 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
         <NotificationPanel />
 
         {/* Divider */}
-        <div className="w-px h-5 mx-1" style={{ background: 'var(--border)' }} />
+        <div className="hidden sm:block w-px h-5 mx-1" style={{ background: 'var(--border)' }} />
 
         {/* User avatar + name */}
-        <div className="flex items-center gap-2">
+        <div className="hidden sm:flex items-center gap-2">
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-sm shadow-blue-500/20 ring-1 ring-white/10"
           >

@@ -40,7 +40,7 @@ const JoinClassroomModal: React.FC<JoinClassroomModalProps> = ({ onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
       style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}>
-      <div className="w-full max-w-sm rounded-2xl overflow-hidden animate-scale-in"
+      <div className="w-full max-w-sm rounded-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto animate-scale-in"
         style={{ background: 'var(--bg-card)', border: '1px solid var(--border-strong)', boxShadow: 'var(--shadow-xl)' }}>
         <div className="flex items-center justify-between p-5" style={{ borderBottom: '1px solid var(--border)' }}>
           <h2 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>Join a Classroom</h2>

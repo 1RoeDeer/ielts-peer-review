@@ -113,9 +113,12 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({
               {checklistItems.map((item) => {
                 const checked = criteriaData.checklistState[item.key];
                 return (
-                  <label
+                  <button
+                    type="button"
+                    role="checkbox"
+                    aria-checked={!!checked}
                     key={item.key}
-                    className="flex items-center gap-2.5 cursor-pointer"
+                    className="w-full min-h-11 md:min-h-0 text-left flex items-center gap-2.5 cursor-pointer"
                     onClick={() =>
                       updateReviewCriteria(criterionKey, {
                         checklistState: { ...criteriaData.checklistState, [item.key]: !checked },
@@ -145,7 +148,7 @@ const CriteriaSection: React.FC<CriteriaSectionProps> = ({
                     >
                       {item.label}
                     </span>
-                  </label>
+                  </button>
                 );
               })}
             </div>

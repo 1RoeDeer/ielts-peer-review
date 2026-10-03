@@ -73,15 +73,15 @@ export const CriteriaPanel: React.FC = () => {
   const iconStyle = { color: 'var(--text-secondary)' };
 
   return (
-    <div className="flex flex-col h-full" style={{ background: 'var(--bg)' }}>
+    <div className="flex flex-col h-full overflow-y-auto md:overflow-hidden" style={{ background: 'var(--bg)' }}>
       {/* Header with Modular Selection */}
       <div
         className="px-5 py-4 flex-shrink-0 space-y-3"
         style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-card)' }}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <h2 className="text-sm font-bold text-[color:var(--text-primary)] flex items-center gap-2">
               <Layers size={15} className="text-blue-400" />
               Критерии оценки IELTS
             </h2>
@@ -144,7 +144,7 @@ export const CriteriaPanel: React.FC = () => {
       </div>
 
       {/* Criteria list */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+      <div className="flex-shrink-0 md:flex-1 md:min-h-0 md:overflow-y-auto px-4 sm:px-5 py-4 space-y-3">
         {selectedCriteria.includes('taskResponse') && (
           <div className="relative">
             {criteriaEvaluators?.taskResponse && (

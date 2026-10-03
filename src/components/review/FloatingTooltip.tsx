@@ -130,7 +130,9 @@ const FloatingTooltip: React.FC<FloatingTooltipProps> = ({
   const tooltipStyle: React.CSSProperties = isMobile
     ? {
         position: 'fixed',
-        bottom: '72px',   // above bottom bar
+        bottom: 'max(12px, env(safe-area-inset-bottom))',
+        maxHeight: 'calc(100dvh - 32px)',
+        overflowY: 'auto',
         left: '12px',
         right: '12px',
         zIndex: 100,

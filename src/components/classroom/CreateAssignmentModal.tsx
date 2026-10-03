@@ -49,7 +49,7 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-700/60 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in max-h-[90vh] flex flex-col">
+      <div className="bg-slate-900 border border-slate-700/60 rounded-2xl w-full max-w-lg shadow-2xl animate-scale-in max-h-[calc(100dvh-2rem)] flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-slate-700/40 flex-shrink-0">
           <h2 className="text-base font-bold text-slate-200">Create Assignment</h2>
           <button onClick={onClose} className="btn-ghost p-1.5"><X size={16} /></button>
@@ -95,7 +95,7 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
             <CharCounter value={prompt} max={MAX_PROMPT_CHARS} warnAt={600} />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="col-span-1">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">Min Words</label>
               <input type="number" value={minWords} onChange={(e) => setMinWords(parseInt(e.target.value) || 150)}

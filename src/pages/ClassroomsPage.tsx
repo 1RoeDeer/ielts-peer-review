@@ -35,7 +35,7 @@ const ClassroomsPage: React.FC = () => {
   return (
     <AppShell title={isTeacher ? 'My Classrooms' : 'Enrolled Classes'}>
       <div className="p-6 max-w-6xl mx-auto space-y-6 animate-fade-in">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-white">{isTeacher ? 'My Classrooms' : 'Enrolled Classes'}</h1>
             <p className="text-sm text-slate-500 mt-1">
@@ -44,7 +44,7 @@ const ClassroomsPage: React.FC = () => {
           </div>
           <button
             onClick={() => isTeacher ? setShowCreate(true) : setShowJoin(true)}
-            className="btn-primary flex items-center gap-2"
+            className="btn-primary self-start flex-shrink-0 flex items-center gap-2"
           >
             <Plus size={16} />
             {isTeacher ? 'Create Classroom' : 'Join Classroom'}

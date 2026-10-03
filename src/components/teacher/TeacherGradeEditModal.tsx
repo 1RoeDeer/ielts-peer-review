@@ -172,7 +172,7 @@ const TeacherGradeEditModal: React.FC<TeacherGradeEditModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div
-        className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl shadow-2xl overflow-hidden border"
+        className="w-full max-w-3xl max-h-[calc(100dvh-2rem)] flex flex-col rounded-2xl shadow-2xl overflow-hidden border"
         style={{
           background: 'var(--bg-card)',
           borderColor: 'var(--border)',

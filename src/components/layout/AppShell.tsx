@@ -18,8 +18,25 @@ const AppShell: React.FC<AppShellProps> = ({ children, title, subtitle }) => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
+  useEffect(() => {
+    const mobile = window.matchMedia('(max-width: 767px)');
+    const closeMobileMenu = () => { if (mobile.matches) setSidebarOpen(false); };
+    closeMobileMenu();
+    mobile.addEventListener('change', closeMobileMenu);
+    return () => mobile.removeEventListener('change', closeMobileMenu);
+  }, [setSidebarOpen]);
+
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSidebarOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [sidebarOpen, setSidebarOpen]);
+
   return (
-    <div className="flex h-screen overflow-hidden relative bg-page">
+    <div className="app-viewport flex overflow-hidden relative bg-page">
       {/* Mobile sidebar backdrop overlay */}
       {sidebarOpen && (
         <div
@@ -35,14 +52,12 @@ const AppShell: React.FC<AppShellProps> = ({ children, title, subtitle }) => {
 
         {/* Main content — transparent so aurora shows through page background */}
         <main
-          className="flex-1 overflow-auto pb-16 md:pb-0"
+          className="flex-1 min-h-0 overflow-auto app-content"
         >
           {children}
         </main>
+        <BottomBar />
       </div>
-
-      {/* Mobile bottom navigation bar */}
-      <BottomBar />
 
       <ToastContainer />
     </div>
